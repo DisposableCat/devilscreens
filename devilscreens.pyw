@@ -6,6 +6,7 @@ from random import shuffle
 import ConfigParser
 import re
 import logging
+import copy
 
 from PIL import Image
 from PIL import ImageTk
@@ -15,16 +16,30 @@ import collections
 
 class imageList(object):
     def __init__(self, data):
-        self.filenames = filenameList(data)
+        self.filenames = wrappingList(data)
+        self.loadedIndex = tk.IntVar(0)
+        self.historyArray = copy.deepcopy(self.filenames)
+        for x in range(-20, 20):
+            self.historyArray[x] = imageObject(self.filenames[x])
 
     def __len__(self):
         return len(self.filenames)
 
     def __getitem__(self, item):
-        return self.filenames[item]
+        return self.historyArray[item]
+
+    def nextImage(self):
+        self.loadedIndex.set(self.loadedIndex.get()+1)
+        old = self.loadedIndex.get() - 20
+        new = self.loadedIndex.get() + 20
+        self.historyArray[old] = self.filenames[old]
+        self.historyArray[new] = imageObject(self.filenames[new])
+
+    def activeImage(self):
+        return self.historyArray[self.loadedIndex.get()]
 
 
-class filenameList(collections.Sequence):
+class wrappingList(collections.Sequence):
     def __init__(self, data):
         self.list = list(data)
 
@@ -34,6 +49,11 @@ class filenameList(collections.Sequence):
     def __getitem__(self, item):
         return self.list[item % len(self.list)]
 
+    def __setitem__(self, key, value):
+        self.list[key % len(self.list[:])] = value
+
+    def __iter__(self):
+        raise TypeError('cannot iterate infinite list!')
 
 class imageObject(object):
     def __init__(self, ordFName):
@@ -57,10 +77,7 @@ class imageObject(object):
 
 
 def showImage(window, intervaltime, filename, calledFromButton):
-    try:
-        window.file = imageObject(filename)
-    except Exception, e:
-        logging.exception(e)
+    window.file = window.imageList.activeImage()
     w, h = window.monitor.width, window.monitor.height
     iw, ih = window.file.image.size
     ratio = min(w / iw, h / ih)
@@ -77,10 +94,10 @@ def showImage(window, intervaltime, filename, calledFromButton):
     if calledFromButton is "unpause":
         intervaltime = window.interval
     if calledFromButton is not "prev":
-        window.showindex.set(window.showindex.get() + 1)
+        window.imageList.nextImage()
     # should call window.nextImage() perhaps?
     window.nextAlarm = window.after(intervaltime, showImage, window, intervaltime,
-                                    window.imagelist[window.showindex.get()], False)
+                                    window.imageList, False)
     return
 
 
@@ -164,9 +181,9 @@ class slideShowWindow(tk.Toplevel):
         self.monitor = monitor
         self.offset = offset
         self.interval = interval
-        self.imagelist = imagelist
-        (self.panel, self.showindex, self.label, self.artistLabel, self.nextAlarm, self.nextButton, self.commandpos,
-         self.prevButton, self.pauseButton, self.openButton,) = (None,) * 10
+        self.imageList = imagelist
+        (self.panel, self.label, self.artistLabel, self.nextAlarm, self.nextButton, self.commandpos,
+         self.prevButton, self.pauseButton, self.openButton,) = (None,) * 9
         self.artist = tk.StringVar()
         self.artist.set(None)
         self.running = tk.StringVar()
@@ -196,11 +213,9 @@ class slideShowWindow(tk.Toplevel):
                                                   self.panel.ph,
                                                   image=self.panel.imagetoshow,
                                                   anchor="center", tags="IMG")
-        self.showindex = tk.IntVar()
-        self.showindex.set(0)
         if self.parent.debugIndex is True:
             self.label = tk.Label(self.panel,
-                                  textvariable=self.showindex, font=("Calibri", "36"), background="white")
+                                  textvariable=self.imageList.loadedIndex, font=("Calibri", "36"), background="white")
             self.panel.create_window(self.monitor.width / 2, self.monitor.height / 2, window=self.label)
         self.artistLabel = tk.Label(self.panel,
                                     textvariable=self.artist, font=("Calibri", "16"), fg="white", background="black")
@@ -224,7 +239,7 @@ class slideShowWindow(tk.Toplevel):
         self.openButton = ttk.Button(self.panel, text="Open", command=self.openExternal)
         self.panel.create_window(int(self.monitor.width * self.commandpos), int(self.monitor.height * 0.05),
                                  window=self.openButton)
-        self.nextAlarm = self.after(self.offset, showImage, self, self.interval, self.imagelist[self.showindex.get()],
+        self.nextAlarm = self.after(self.offset, showImage, self, self.interval, self.imageList,
                                     False)
         self.running.set("Running")
 
@@ -238,11 +253,11 @@ class slideShowWindow(tk.Toplevel):
     def prevImage(self):
         self.showindex.set(self.showindex.get() - 1)
         self.after_cancel(self.nextAlarm)
-        self.nextAlarm = self.after(0, showImage, self, self.interval, self.imagelist[self.showindex.get() - 1], "prev")
+        self.nextAlarm = self.after(0, showImage, self, self.interval, self.imageList[self.showindex.get() - 1], "prev")
 
     def nextImage(self):
         self.after_cancel(self.nextAlarm)
-        self.nextAlarm = self.after(0, showImage, self, self.interval, self.imagelist[self.showindex.get()], "next")
+        self.nextAlarm = self.after(0, showImage, self, self.interval, self.imageList[self.showindex.get()], "next")
 
     def pauseUnpause(self):
         # possibly buggy in re next/prev while paused
@@ -250,11 +265,11 @@ class slideShowWindow(tk.Toplevel):
             self.after_cancel(self.nextAlarm)
             self.running.set("Paused")
         else:
-            self.nextAlarm = self.after(0, showImage, self, 0, self.imagelist[self.showindex.get()], "unpause")
+            self.nextAlarm = self.after(0, showImage, self, 0, self.imageList[self.showindex.get()], "unpause")
             self.running.set("Running")
 
     def openExternal(self):
-        os.startfile(self.imagelist[self.showindex.get() - 1])
+        os.startfile(self.imageList[self.showindex.get() - 1])
 
 
 logfilename = 'error.log'
