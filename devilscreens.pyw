@@ -1,17 +1,41 @@
 from __future__ import division
 import Tkinter as tk
 import ttk
-from PIL import Image
-from PIL import ImageTk
 import os
 from random import shuffle
-import pyglet
 import ConfigParser
 import re
 import logging
 
+from PIL import Image
+from PIL import ImageTk
+import pyglet
+import collections
 
-class ordered(object):
+
+class imageList(object):
+    def __init__(self, data):
+        self.filenames = filenameList(data)
+
+    def __len__(self):
+        return len(self.filenames)
+
+    def __getitem__(self, item):
+        return self.filenames[item]
+
+
+class filenameList(collections.Sequence):
+    def __init__(self, data):
+        self.list = list(data)
+
+    def __len__(self):
+        return len(self.list)
+
+    def __getitem__(self, item):
+        return self.list[item % len(self.list)]
+
+
+class imageObject(object):
     def __init__(self, ordFName):
         self.ordFName = ordFName
         self.ordName, self.ext = os.path.splitext(ordFName)
@@ -34,7 +58,7 @@ class ordered(object):
 
 def showImage(window, intervaltime, filename, calledFromButton):
     try:
-        window.file = ordered(filename)
+        window.file = imageObject(filename)
     except Exception, e:
         logging.exception(e)
     w, h = window.monitor.width, window.monitor.height
@@ -65,7 +89,7 @@ class root(tk.Tk):
         tk.Tk.__init__(self, parent)
         self.childWindows = 0
         (self.displaysToUse, self.numberOfMonitors, self.interval, self.folder, self.debugIndex, self.offsetCount,
-         self.displaysUsed, self.displayId, self.mainImageList, self.uniSource, self.imageListArray, self.display,
+         self.displaysUsed, self.displayId, self.preImageList, self.uniSource, self.imageListArray, self.display,
          self.monitors, self.startingOffset) = (None,) * 14
         self.initialize()
 
@@ -111,7 +135,7 @@ class root(tk.Tk):
             self.displayId += 1
 
     def setupShuffledList(self):
-        self.mainImageList = list()
+        self.preImageList = list()
         os.chdir(self.folder)
         self.uniSource = os.getcwdu()
         for fname in os.listdir(self.uniSource):
@@ -119,11 +143,12 @@ class root(tk.Tk):
             if os.path.isdir(path):
                 continue
             if fname.endswith(('.jpg', '.png', '.jpeg', '.gif')):
-                self.mainImageList.append(fname)
-        shuffle(self.mainImageList)
+                self.preImageList.append(fname)
+        shuffle(self.preImageList)
         self.imageListArray = list()
-        for i in xrange(0, len(self.mainImageList), int(len(self.mainImageList) / self.numberOfMonitors)):
-            self.imageListArray.append(self.mainImageList[i:i + (int(len(self.mainImageList) / self.numberOfMonitors))])
+        for i in xrange(0, len(self.preImageList), int(len(self.preImageList) / self.numberOfMonitors)):
+            self.imageListArray.append(
+                imageList(self.preImageList[i:i + (int(len(self.preImageList) / self.numberOfMonitors))]))
 
     def initDisplays(self):
         self.display = pyglet.window.get_platform().get_default_display()
