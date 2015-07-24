@@ -93,7 +93,7 @@ class root(tk.Tk):
     def writeConfig(self):
         self.config.add_section('Config')
         self.config.set('Config', 'interval', '16000')
-        self.config.set('Config', 'folder', "E:\Dropbox\Ordfaves")
+        self.config.set('Config', 'folder', os.getcwdu())
         self.config.set('Config', 'monitors', "0,1")
         self.config.add_section('Debug')
         self.config.set('Debug', 'index display', 'false')
