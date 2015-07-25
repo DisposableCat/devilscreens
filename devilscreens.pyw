@@ -282,12 +282,12 @@ class slideShowWindow(tk.Toplevel):
         self.running.set("Running")
 
     def closeWindow(self, event):
+        self.parent.totalImages.set(self.parent.totalImages.get() +
+                                    self.imageList.loadedIndex.get())
         if self.parent.childWindows == 1:
             self.parent.destroy()
         else:
             self.parent.childWindows -= 1
-            self.parent.totalImages.set(self.parent.totalImages.get() +
-                                        self.imageList.loadedIndex.get())
             self.destroy()
 
     def showButtons(self, event):
