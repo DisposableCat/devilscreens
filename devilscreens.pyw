@@ -9,18 +9,30 @@ import logging
 import collections
 import time
 import sys
+import traceback
+import StringIO
 
 from PIL import Image
 from PIL import ImageTk
 import pyglet
 
 
-def handleExceptions(etype, value, traceback):
-    if issubclass(etype, KeyboardInterrupt):
-        sys.__excepthook__(etype, value, traceback)
-        return
-    log.error("Uncaught Exception", (etype, value, traceback))
+def handleExceptions():
+    #with thanks to Brad Barrows:
+    #http://stackoverflow.com/questions/1508467/how-to-log-my-traceback-error
+    old_print_exception = traceback.print_exception
+    def custom_print_exception(etype, value, tb, limit=None, file=None):
+        tb_output = StringIO.StringIO()
+        traceback.print_tb(tb, limit, tb_output)
+        log.error(tb_output.getvalue())
+        tb_output.close()
+        log.info('DevilScreens crashed at ' + time.strftime("%c"))
+        sys.exit(1)
+    traceback.print_exception = custom_print_exception
 
+def silenceErr():
+    def write(self, s):
+        pass
 
 class imageList(object):
     def __init__(self, parent, data):
@@ -326,13 +338,12 @@ class slideShowWindow(tk.Toplevel):
     def openExternal(self):
         os.startfile(self.imageList.activeImage.ordFName)
 
-
+handleExceptions()
 logfilename = 'system.log'
 log = logging.getLogger()
 logging.basicConfig(filename=logfilename, level=logging.DEBUG)
 handler = logging.StreamHandler(stream=sys.stdout)
 log.addHandler(handler)
-sys.excepthook = handleExceptions
 log.info('DevilScreens started at ' + time.strftime("%c"))
 
 root = root(None)
