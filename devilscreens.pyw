@@ -7,10 +7,19 @@ import ConfigParser
 import re
 import logging
 import collections
+import time
+import sys
 
 from PIL import Image
 from PIL import ImageTk
 import pyglet
+
+
+def handleExceptions(etype, value, traceback):
+    if issubclass(etype, KeyboardInterrupt):
+        sys.__excepthook__(etype, value, traceback)
+        return
+    log.error("Uncaught Exception", (etype, value, traceback))
 
 
 class imageList(object):
@@ -129,6 +138,8 @@ class root(tk.Tk):
     def initialize(self):
         self.config = ConfigParser.ConfigParser()
         self.readConfig()
+        log.info("Folder = " + self.folder)
+        log.info("Interval = " + str(self.interval))
         self.initDisplays()
         self.setupShuffledList()
         self.startShow()
@@ -305,13 +316,18 @@ class slideShowWindow(tk.Toplevel):
         os.startfile(self.imageList.activeImage.ordFName)
 
 
-logfilename = 'error.log'
+logfilename = 'system.log'
+log = logging.getLogger()
 logging.basicConfig(filename=logfilename, level=logging.DEBUG)
+handler = logging.StreamHandler(stream=sys.stdout)
+log.addHandler(handler)
+sys.excepthook = handleExceptions
+log.info('DevilScreens started at ' + time.strftime("%c"))
 
 root = root(None)
 root.withdraw()
 
 root.mainloop()
 
-print 'closing'
+log.info('DevilScreens closed at ' + time.strftime("%c"))
 exit()
