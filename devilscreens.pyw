@@ -145,6 +145,7 @@ class root(tk.Tk):
     def __init__(self, parent):
         tk.Tk.__init__(self, parent)
         self.childWindows = 0
+        self.baseFolder = os.getcwdu()
         self.totalImages = tk.IntVar()
         self.totalImages.set(0)
         self.initialize()
@@ -286,8 +287,11 @@ class slideShowWindow(tk.Toplevel):
                                      command=self.prevImage)
         self.pauseButton = ttk.Button(self.panel, textvariable=self.running,
                                       command=self.pauseUnpause)
-        self.openButton = ttk.Button(self.panel, text="Open",
-                                     command=self.openExternal)
+        self.shareImg = ImageTk.PhotoImage(Image.open(os.path.join(
+            self.parent.baseFolder + '/share.png')))
+        self.openButton = tk.Button(self.panel, image=self.shareImg,
+                                     command=self.openExternal,
+                                    background='black', border='0')
         self.nextAlarm = self.after(self.offset,
                                     self.imageList.updateActiveImage,
                                     False)
