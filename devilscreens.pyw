@@ -28,9 +28,9 @@ class imageList(object):
         self.intervalTime = self.parent.interval
         self.filenames = wrappingList(data)
         self.loadedIndex = tk.IntVar()
-        self.loadedIndex.set(19)
+        self.loadedIndex.set(0)
         self.historyArray = collections.deque()
-        for x in range(0, 40):
+        for x in range(-20, 20):
             self.historyArray.append(imageObject(self.filenames[x]))
 
     def __len__(self):
@@ -57,7 +57,7 @@ class imageList(object):
         self.updateActiveImage("prev")
 
     def updateActiveImage(self, calledFromButton):
-        self.activeImage = self.historyArray[20]
+        self.activeImage = self.historyArray[0]
         self.activeImage.w, self.activeImage.h = \
             self.parent.monitor.width, self.parent.monitor.height
         self.activeImage.iw, self.activeImage.ih = self.activeImage.image.size
@@ -133,6 +133,8 @@ class root(tk.Tk):
     def __init__(self, parent):
         tk.Tk.__init__(self, parent)
         self.childWindows = 0
+        self.totalImages = tk.IntVar()
+        self.totalImages.set(0)
         self.initialize()
 
     def initialize(self):
@@ -215,10 +217,6 @@ class slideShowWindow(tk.Toplevel):
         self.running.set("Paused")
         self.style = ttk.Style()
         self.style.theme_use('clam')
-        self.initialize()
-        self.parent.childWindows += 1
-
-    def initialize(self):
         self.configure(background='black')
         # make it cover the entire screen
         self.overrideredirect(1)
@@ -230,6 +228,22 @@ class slideShowWindow(tk.Toplevel):
             self.geometry(
                 "%dx%d%+d%+d" % (self.monitor.width, self.monitor.height,
                                  self.monitor.x, self.monitor.y))
+        if self.monitor.x > 1000:
+            # work on this logic - should sum all monitors' width to get total
+            # canvas, then determine percentages of
+            # canvas occupied by each screen. Can then set commandpos according
+            # to margin of each. can also set update order based on this =
+            # reorder monitorlist in place before iterating constructors.
+            self.commandpos = 0.05
+        else:
+            self.commandpos = 0.95
+        self.makePanel()
+        self.bind('<Key-Escape>', self.closeWindow)
+        self.panel.bind('<Enter>', self.showButtons)
+        self.panel.bind('<Leave>', self.hideButtons)
+        self.parent.childWindows += 1
+
+    def makePanel(self):
         self.panel = tk.Canvas(self, bd=0, highlightthickness=0)
         self.panel.pack(fill="both", expand=1)
         self.panel.pw = self.monitor.width / 2
@@ -254,36 +268,14 @@ class slideShowWindow(tk.Toplevel):
         self.panel.artistWindow = self.panel.create_window(
             self.monitor.width / 2, self.monitor.height, anchor="s",
             window=self.artistLabel)
-        self.bind('<Key-Escape>', self.closeWindow)
         self.nextButton = ttk.Button(self.panel, text=">",
                                      command=self.nextImage)
-        if self.monitor.x > 1000:
-            # work on this logic - should sum all monitors' width to get total
-            # canvas, then determine percentages of
-            # canvas occupied by each screen. Can then set commandpos according
-            # to margin of each. can also set update order based on this =
-            # reorder monitorlist in place before iterating constructors.
-            self.commandpos = 0.05
-        else:
-            self.commandpos = 0.95
-        self.panel.create_window(int(self.monitor.width * 0.95),
-                                 self.monitor.height / 2,
-                                 window=self.nextButton)
         self.prevButton = ttk.Button(self.panel, text="<",
                                      command=self.prevImage)
-        self.panel.create_window(int(self.monitor.width * 0.05),
-                                 self.monitor.height / 2,
-                                 window=self.prevButton)
         self.pauseButton = ttk.Button(self.panel, textvariable=self.running,
                                       command=self.pauseUnpause)
-        self.panel.create_window(int(self.monitor.width * self.commandpos),
-                                 int(self.monitor.height * 0.95),
-                                 window=self.pauseButton)
         self.openButton = ttk.Button(self.panel, text="Open",
                                      command=self.openExternal)
-        self.panel.create_window(int(self.monitor.width * self.commandpos),
-                                 int(self.monitor.height * 0.05),
-                                 window=self.openButton)
         self.nextAlarm = self.after(self.offset,
                                     self.imageList.updateActiveImage,
                                     False)
@@ -294,7 +286,26 @@ class slideShowWindow(tk.Toplevel):
             self.parent.destroy()
         else:
             self.parent.childWindows -= 1
+            self.parent.totalImages.set(self.parent.totalImages.get() +
+                                        self.imageList.loadedIndex.get())
             self.destroy()
+
+    def showButtons(self, event):
+        self.panel.create_window(int(self.monitor.width * 0.95),
+                                 self.monitor.height / 2,
+                                 window=self.nextButton, tags="button")
+        self.panel.create_window(int(self.monitor.width * self.commandpos),
+                                 int(self.monitor.height * 0.95),
+                                 window=self.pauseButton, tags="button")
+        self.panel.create_window(int(self.monitor.width * self.commandpos),
+                                 int(self.monitor.height * 0.05),
+                                 window=self.openButton, tags="button")
+        self.panel.create_window(int(self.monitor.width * 0.05),
+                                 self.monitor.height / 2,
+                                 window=self.prevButton, tags="button")
+
+    def hideButtons(self, event):
+        self.panel.delete("button")
 
     def prevImage(self):
         self.after_cancel(self.nextAlarm)
@@ -330,4 +341,5 @@ root.withdraw()
 root.mainloop()
 
 log.info('DevilScreens closed at ' + time.strftime("%c"))
+log.info('Showed ' + str(root.totalImages.get()) + ' total images')
 exit()
