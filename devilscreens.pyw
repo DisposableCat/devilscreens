@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+"""devilscreens.pyw: a configurable multimonitor slideshow"""
 from __future__ import division
 import Tkinter as tk
 import os
@@ -14,6 +16,9 @@ from PIL import Image
 from PIL import ImageTk
 import pyglet
 
+
+# Copyright (c) 2015 Peter K Cawley. Released under MIT license; see
+# LICENSE.txt
 
 def handleExceptions():
     # with thanks to Brad Barrows:
@@ -237,6 +242,7 @@ class ssRoot(tk.Tk):
             self.interval = self.config.getint('Config', 'interval') * 1000
             self.folder = self.config.get('Config', 'folder')
             self.offsetPref = self.config.getboolean('Config', 'offset')
+            self.bgColor = self.config.get('Config', 'background color')
             themes = self.config.get("Theme", "themes")
             themes = themes.split(',')
             self.themes = wrappingList(themes)
@@ -246,11 +252,12 @@ class ssRoot(tk.Tk):
             self.readConfig()
 
     def writeConfig(self):
-        #sensible defaults
+        # sensible defaults
         self.config.add_section('Config')
         self.config.set('Config', 'interval', '10')
         self.config.set('Config', 'offset', 'yes')
         self.config.set('Config', 'folder', os.getcwdu())
+        self.config.set('Config', 'background color', 'black')
         self.config.set('Config', 'monitors', "1")
         self.config.add_section("Theme")
         self.config.set("Theme", "themes", "roundSilver")
@@ -267,7 +274,7 @@ class ssRoot(tk.Tk):
             offset = int(self.startingOffset * self.displayId)
             self.displaysUsed.append(slideShowWindow(self, self.monitors[
                 count], self.imageListArray[count], self.interval, offset,
-                                                     self.themes[count]))
+                self.themes[count]))
             self.displayId += 1
 
     def setupShuffledList(self):
@@ -324,14 +331,15 @@ class slideShowWindow(tk.Toplevel):
     def makePanel(self):
         self.p = tk.Canvas(self, bd=0, highlightthickness=0)
         self.p.pack(fill="both", expand=1)
-        self.p.configure(background='black')
+        self.p.configure(background=self.parent.bgColor)
         self.p.imagetoshow = None
         self.p.show = self.p.create_image(self.m.pw, self.m.ph,
                                           image=self.p.imagetoshow,
                                           anchor="center", tags="IMG")
         if self.parent.debugIndex is True:
             self.label = tk.Label(self.p, textvariable=self.il.loadedIndex,
-                                  font=("Calibri", "36"), background="white")
+                                  font=("Calibri", "36"),
+                                  background=self.parent.bgColor)
             self.p.create_window(self.m.pw, self.m.ph, window=self.label)
         self.artistLabel = tk.Label(self.p, textvariable=self.artist,
                                     font=("Calibri", "16"), fg="white",
