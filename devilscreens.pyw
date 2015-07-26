@@ -23,10 +23,10 @@ def handleExceptions():
     old_print_exception = traceback.print_exception
 
     def custom_print_exception(etype, value, tb, limit=None, files=None):
-        tb_output = StringIO.StringIO()
-        traceback.print_tb(tb, limit, tb_output)
-        log.error(tb_output.getvalue())
-        tb_output.close()
+        tb_output = traceback.format_exception(etype, value, tb)
+        tb_output = list("\n") + tb_output
+        fullException = "\n".join(tb_output)
+        log.error(fullException)
         log.info('DevilScreens crashed at ' + time.strftime("%c"))
         sys.exit(1)
 
@@ -45,9 +45,9 @@ class usableScreen:
         self.w = Win32Display.width
         self.h = Win32Display.height
         if self.x < 0:
-            self.setPos(0.5, "left", '+')
+            self.setPos(0.95, "left", '+')
         if self.x > 0:
-            self.setPos(0.5, "right", '')
+            self.setPos(0.05, "right", '')
         if self.x == 0:
             self.setPos(0.5, "center", '')
         self.dimensions = (self.w, self.h, self.gSign, self.x, self.y,)
@@ -169,7 +169,7 @@ class ssRoot(tk.Tk):
     def __init__(self, parent):
         tk.Tk.__init__(self, parent)
         self.childWindows = 0
-        self.baseFolder = os.getcwdu()
+        self.baseDir = os.getcwdu()
         self.totalImages = tk.IntVar()
         self.totalImages.set(0)
         self.initialize()
@@ -264,6 +264,7 @@ class slideShowWindow(tk.Toplevel):
         self.bind('<Key-Escape>', self.closeWindow)
         self.p.bind('<Enter>', self.showButtons)
         self.p.bind('<Leave>', self.hideButtons)
+        self.p.tag_bind("open", "<ButtonPress-1>", self.openExternal)
         self.parent.childWindows += 1
 
     def makePanel(self):
@@ -289,10 +290,7 @@ class slideShowWindow(tk.Toplevel):
         self.pauseButton = ttk.Button(self.p, textvariable=self.running,
                                       command=self.pauseUnpause)
         self.shareImg = ImageTk.PhotoImage(
-            Image.open(os.path.join(self.parent.baseFolder + '/share.png')))
-        self.openButton = tk.Button(self.p, image=self.shareImg,
-                                    command=self.openExternal,
-                                    background='black', border='0')
+            Image.open(os.path.join(self.parent.baseDir + '/icons/share.png')))
         self.nextAlarm = self.after(self.offset, self.il.updateActiveImage,
                                     False)
         self.running.set(True)
@@ -307,11 +305,13 @@ class slideShowWindow(tk.Toplevel):
             self.destroy()
 
     def showButtons(self, event):
+        self.openButton = self.p.create_image(self.m.cPos, self.m.t,
+                                              image=self.shareImg,
+                                              anchor="center", tags=("open",
+                                                                     "button",))
         self.p.create_window(self.m.r, self.m.ph, window=self.nextButton,
                              tags="button")
         self.p.create_window(self.m.cPos, self.m.b, window=self.pauseButton,
-                             tags="button")
-        self.p.create_window(self.m.cPos, self.m.t, window=self.openButton,
                              tags="button")
         self.p.create_window(self.m.l, self.m.ph, window=self.prevButton,
                              tags="button")
