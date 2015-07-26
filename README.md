@@ -28,7 +28,9 @@ Right now the app works off an INI file, which will be generated with sensible d
  - If this is "no", update is synchronized across all monitors.
 - Folder: This is the folder you want to display. All files ending in JPG/PNG/JPEG/GIF in this folder will be shuffled and divided into N groups, where N is the number of monitors you're using. Animated GIFs do not work (yet?)
  - The default is the folder that devilscreens.pyw is in. I should probably fix that but I am not sure how to do so in a platform-agnostic fashion.
-- Background color: The color to use for the background of the image windows.
+- Background color: The color to use for the background of the image windows
+ and text labels.
+- Text color: The color to use for label text. Should not be the same as above.
 - Monitors: Which monitors to display on. This should be in the form ```1,2,3``` et cetera. For now there is no way other than trial and error to determine which monitor is which, but I'll fix this when I add the GUI.
 - Themes: A comma-separated list of the themes you want to use. There are currently several themes included; however, you can use literally any icons you like by
  copying my themes folder structure and naming. Template PSDs are included, feel free to go nuts with them (and send me a pull request if you do so I can include your themes!)

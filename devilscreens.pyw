@@ -152,7 +152,6 @@ class imageObject(object):
     def __init__(self, ordFName):
         self.ordFName = ordFName
         self.ordName, self.ext = os.path.splitext(ordFName)
-        self.creation = self.ordName[:20]
         self.fileHash = self.ordName[-64:]
         try:
             self.image = Image.open(ordFName)
@@ -243,6 +242,7 @@ class ssRoot(tk.Tk):
             self.folder = self.config.get('Config', 'folder')
             self.offsetPref = self.config.getboolean('Config', 'offset')
             self.bgColor = self.config.get('Config', 'background color')
+            self.fgColor = self.config.get('Config', 'text color')
             themes = self.config.get("Theme", "themes")
             themes = themes.split(',')
             self.themes = wrappingList(themes)
@@ -258,6 +258,7 @@ class ssRoot(tk.Tk):
         self.config.set('Config', 'offset', 'yes')
         self.config.set('Config', 'folder', os.getcwdu())
         self.config.set('Config', 'background color', 'black')
+        self.config.set('Config', 'text color', "white")
         self.config.set('Config', 'monitors', "1")
         self.config.add_section("Theme")
         self.config.set("Theme", "themes", "roundSilver")
@@ -274,7 +275,7 @@ class ssRoot(tk.Tk):
             offset = int(self.startingOffset * self.displayId)
             self.displaysUsed.append(slideShowWindow(self, self.monitors[
                 count], self.imageListArray[count], self.interval, offset,
-                self.themes[count]))
+                                                     self.themes[count]))
             self.displayId += 1
 
     def setupShuffledList(self):
@@ -339,11 +340,13 @@ class slideShowWindow(tk.Toplevel):
         if self.parent.debugIndex is True:
             self.label = tk.Label(self.p, textvariable=self.il.loadedIndex,
                                   font=("Calibri", "36"),
-                                  background=self.parent.bgColor)
+                                  bg=self.parent.bgColor,
+                                  fg=self.parent.fgColor)
             self.p.create_window(self.m.pw, self.m.ph, window=self.label)
         self.artistLabel = tk.Label(self.p, textvariable=self.artist,
-                                    font=("Calibri", "16"), fg="white",
-                                    background="black")
+                                    font=("Calibri", "16"),
+                                    fg=self.parent.fgColor,
+                                    background=self.parent.bgColor)
         self.p.artistWindow = self.p.create_window(self.m.pw, self.m.h,
                                                    anchor="s",
                                                    window=self.artistLabel)
