@@ -234,8 +234,9 @@ class ssRoot(tk.Tk):
             self.displaysToUse = self.displaysToUse.split(',')
             self.displaysToUse = map(int, self.displaysToUse)
             self.numberOfMonitors = len(self.displaysToUse)
-            self.interval = self.config.getint('Config', 'interval')
+            self.interval = self.config.getint('Config', 'interval') * 1000
             self.folder = self.config.get('Config', 'folder')
+            self.offsetPref = self.config.getboolean('Config', 'offset')
             themes = self.config.get("Theme", "themes")
             themes = themes.split(',')
             self.themes = wrappingList(themes)
@@ -246,13 +247,14 @@ class ssRoot(tk.Tk):
 
     def writeConfig(self):
         self.config.add_section('Config')
-        self.config.set('Config', 'interval', '16000')
+        self.config.set('Config', 'interval', '10')
+        self.config.set('Config', 'offset', 'yes')
         self.config.set('Config', 'folder', os.getcwdu())
-        self.config.set('Config', 'monitors', "0,1")
+        self.config.set('Config', 'monitors', "1")
         self.config.add_section("Theme")
         self.config.set("Theme", "themes", "roundSilver")
         self.config.add_section('Debug')
-        self.config.set('Debug', 'index display', 'false')
+        self.config.set('Debug', 'index display', 'no')
         with open('slideshow.ini', 'wb') as configfile:
             self.config.write(configfile)
 
@@ -263,7 +265,7 @@ class ssRoot(tk.Tk):
         for count, each in enumerate(self.displaysToUse):
             offset = int(self.startingOffset * self.displayId)
             self.displaysUsed.append(slideShowWindow(self, self.monitors[
-                each], self.imageListArray[count], self.interval, offset,
+                count], self.imageListArray[count], self.interval, offset,
                                                      self.themes[count]))
             self.displayId += 1
 
@@ -291,6 +293,8 @@ class ssRoot(tk.Tk):
         for each in monlist:
             self.monitors.append(usableScreen(each))
         self.startingOffset = self.interval / len(self.displaysToUse)
+        if self.offsetPref is False:
+            self.startingOffset = 0
 
 
 class slideShowWindow(tk.Toplevel):
