@@ -1,6 +1,5 @@
 from __future__ import division
 import Tkinter as tk
-import ttk
 import os
 from random import shuffle
 import ConfigParser
@@ -180,7 +179,8 @@ class fancyButton:
         self.parent.p.tag_bind(self.button, "<ButtonPress-1>", self.onClick)
 
     def makeIcon(self, button):
-        pathlist = ("\\icons\\", self.button, ".png")
+        pathlist = ("\\themes\\", self.parent.theme, "\\" + self.button,
+                    ".png")
         iconpath = ''.join(pathlist)
         newImg = ImageTk.PhotoImage(
             Image.open(os.path.join(self.parent.parent.baseDir + iconpath)))
@@ -236,6 +236,9 @@ class ssRoot(tk.Tk):
             self.numberOfMonitors = len(self.displaysToUse)
             self.interval = self.config.getint('Config', 'interval')
             self.folder = self.config.get('Config', 'folder')
+            themes = self.config.get("Theme", "themes")
+            themes = themes.split(',')
+            self.themes = wrappingList(themes)
             self.debugIndex = self.config.getboolean('Debug', 'index display')
         else:
             self.writeConfig()
@@ -246,6 +249,8 @@ class ssRoot(tk.Tk):
         self.config.set('Config', 'interval', '16000')
         self.config.set('Config', 'folder', os.getcwdu())
         self.config.set('Config', 'monitors', "0,1")
+        self.config.add_section("Theme")
+        self.config.set("Theme", "themes", "coolRainbow")
         self.config.add_section('Debug')
         self.config.set('Debug', 'index display', 'false')
         with open('slideshow.ini', 'wb') as configfile:
@@ -258,7 +263,8 @@ class ssRoot(tk.Tk):
         for count, each in enumerate(self.displaysToUse):
             offset = int(self.startingOffset * self.displayId)
             self.displaysUsed.append(slideShowWindow(self, self.monitors[
-                each], self.imageListArray[count], self.interval, offset))
+                each], self.imageListArray[count], self.interval, offset,
+                                                     self.themes[count]))
             self.displayId += 1
 
     def setupShuffledList(self):
@@ -288,19 +294,18 @@ class ssRoot(tk.Tk):
 
 
 class slideShowWindow(tk.Toplevel):
-    def __init__(self, parent, monitor, imagelist, interval, offset):
+    def __init__(self, parent, monitor, imagelist, interval, offset, theme):
         tk.Toplevel.__init__(self, parent)
         self.parent = parent
         self.m = monitor
         self.offset = offset
         self.interval = interval
+        self.theme = theme
         self.il = imageList(self, imagelist)
         self.artist = tk.StringVar()
         self.artist.set(None)
         self.running = tk.BooleanVar()
         self.running.set(False)
-        self.style = ttk.Style()
-        self.style.theme_use('clam')
         self.configure(background='black')
         self.overrideredirect(1)
         self.geometry("%dx%d%s%+d%+d" % self.m.dimensions)
