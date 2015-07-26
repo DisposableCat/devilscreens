@@ -250,7 +250,7 @@ class ssRoot(tk.Tk):
         self.config.set('Config', 'folder', os.getcwdu())
         self.config.set('Config', 'monitors', "0,1")
         self.config.add_section("Theme")
-        self.config.set("Theme", "themes", "coolRainbow")
+        self.config.set("Theme", "themes", "roundSilver")
         self.config.add_section('Debug')
         self.config.set('Debug', 'index display', 'false')
         with open('slideshow.ini', 'wb') as configfile:
