@@ -14,6 +14,10 @@ If you're on Windows, get PIL from here: http://www.lfd.uci.edu/~gohlke/pythonli
 
 Once you've got all that, download the repo and run devilscreens.pyw.
 
+Screenshot
+-----------
+[main view](/docs/screenshot.png?raw=true)
+
 Usage
 ------------
 Right now the app works off an INI file, which will be generated with sensible defaults the first time you run it. I'm going to code a config GUI one of these days. The options in the INI are as follows:
