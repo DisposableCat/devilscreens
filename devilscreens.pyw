@@ -42,12 +42,12 @@ def silenceErr():
 
 
 class usableScreen:
-    def __init__(self, Win32Display):
+    def __init__(self, Screen):
         lmargin, rmargin, tmargin, bmargin = 0.06, 0.94, 0.06, 0.90
-        self.x = Win32Display.x
-        self.y = Win32Display.y
-        self.w = Win32Display.width
-        self.h = Win32Display.height
+        self.x = Screen.x
+        self.y = Screen.y
+        self.w = Screen.width
+        self.h = Screen.height
         if self.x < 0:
             self.setPos(rmargin, "left", '+')
         if self.x > 0:
@@ -296,7 +296,7 @@ class ssRoot(tk.Tk):
                 int(len(pImgList) / self.numberOfMonitors))])
 
     def initDisplays(self):
-        self.display = pyglet.window.get_platform().get_default_display()
+        self.display = pyglet.canvas.get_display()
         monlist = self.display.get_screens()
         self.monitors = list()
         for each in monlist:
@@ -355,6 +355,7 @@ class slideShowWindow(tk.Toplevel):
         self.running.set(True)
 
     def closeWindow(self, event):
+        #total is buggy as fuck, need to fix
         self.parent.totalImages.set(self.parent.totalImages.get() +
                                     self.il.loadedIndex.get())
         if self.parent.childWindows == 1:
