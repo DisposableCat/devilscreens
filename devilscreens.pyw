@@ -246,6 +246,7 @@ class ssRoot(tk.Tk):
             self.readConfig()
 
     def writeConfig(self):
+        #sensible defaults
         self.config.add_section('Config')
         self.config.set('Config', 'interval', '10')
         self.config.set('Config', 'offset', 'yes')
