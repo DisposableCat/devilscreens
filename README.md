@@ -3,13 +3,16 @@ Idle screens are the Devil's playthings. This is a simple, configurable multimon
 
 Requirements
 ------------
-At present, a working Python 2.7 environment, PIL, and Pyglet.
+At present:
+- a working Python 2.7 environment
+- Python Image Library (PIL)
+- Pyglet
 
 You can get Pyglet from pip install pyglet.
 
 If you're on Windows, get PIL from here: http://www.lfd.uci.edu/~gohlke/pythonlibs/
 
-Once you've got that, download the repo and run devilscreens.pyw.
+Once you've got all that, download the repo and run devilscreens.pyw.
 
 Usage
 ------------
@@ -33,6 +36,6 @@ Other Stuff
 -----------
 - Errors are logged to a file called system.log. If you hit any let me know by submitting an issue.
 
-- I wrote this to work on files automatically exported by Hydrus Network (https://github.com/hydrusnetwork/hydrus). For this reason it will look for any string in the filename __surrounded by four underscores__ and will display this string in a label at the bottom of the window if found; the intent is that you could use that to show the artist/photographer/location/whatever namespace that you have tagged in Hydrus by running this against an export folder you've configured to put that namespace in the filename surrounded by four underscores.
+- I wrote this to work on files automatically exported by Hydrus Network (https://github.com/hydrusnetwork/hydrus). For this reason it will look for any string in the filename ''__surrounded by four underscores__'' and will display this string in a label at the bottom of the window if found; the intent is that you could use that to show the artist/photographer/location/whatever namespace that you have tagged in Hydrus by running this against an export folder you've configured to put that namespace in the filename surrounded by four underscores.
 
 If you're not using Hydrus, and you're the kind of person who will use this program, you should be.
