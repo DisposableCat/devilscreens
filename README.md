@@ -6,11 +6,14 @@ Requirements
 ------------
 At present:
 - a working Python 2.7 environment
-- maybe Windows, I'm not sure. No chance to test yet. If you can test on 
-another platform and 
-let me know I will work with you to update for compatibility.
 - Python Image Library (PIL)
-- Pyglet
+- Pyglet 1.2+
+- this should be platform-agnostic (for anything with Pyglet anyway) but I 
+haven't tested
+ on anything but 
+Windows. If you experience difficulty with some other OS let me know and 
+we'll troubleshoot so that I can fix it.
+
 
 You can get Pyglet from pip install pyglet.
 
