@@ -1,5 +1,6 @@
 # DevilScreens
-Idle screens are the Devil's playthings. This is a simple, configurable multimonitor slideshow that will allow you to run fullscreen slideshows of whatever you want on your idle monitors. Playback is controllable - pause/next/previous/open file.
+Idle screens are the Devil's playthings. This is a simple, configurable multimonitor slideshow that will allow you to run fullscreen slideshows of whatever you want on your idle monitors. Playback is controllable - pause/next/previous/open 
+file. Buttons auto-hide when you're not moused over the screen they're on.
 
 Requirements
 ------------
