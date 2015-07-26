@@ -10,7 +10,6 @@ import collections
 import time
 import sys
 import traceback
-import StringIO
 
 from PIL import Image
 from PIL import ImageTk
@@ -40,23 +39,24 @@ def silenceErr():
 
 class usableScreen:
     def __init__(self, Win32Display):
+        lmargin, rmargin, tmargin, bmargin = 0.06, 0.94, 0.06, 0.90
         self.x = Win32Display.x
         self.y = Win32Display.y
         self.w = Win32Display.width
         self.h = Win32Display.height
         if self.x < 0:
-            self.setPos(0.95, "left", '+')
+            self.setPos(rmargin, "left", '+')
         if self.x > 0:
-            self.setPos(0.05, "right", '')
+            self.setPos(lmargin, "right", '')
         if self.x == 0:
             self.setPos(0.5, "center", '')
         self.dimensions = (self.w, self.h, self.gSign, self.x, self.y,)
         self.pw = self.w / 2
         self.ph = self.h / 2
-        self.t = int(self.h * 0.05)
-        self.b = int(self.h * 0.95)
-        self.l = int(self.w * 0.05)
-        self.r = int(self.w * 0.95)
+        self.t = int(self.h * tmargin)
+        self.b = int(self.h * bmargin)
+        self.l = int(self.w * lmargin)
+        self.r = int(self.w * rmargin)
 
     def setPos(self, percent, pos, string):
         self.cPos = int(self.w * percent)
@@ -165,6 +165,50 @@ class imageObject(object):
             print each + " : " + vars(self)[each]
 
 
+class fancyButton:
+    def __init__(self, parent, button, function):
+        self.parent = parent
+        self.button = button
+        self.function = function
+        self.toggleFunc = None
+        if self.button == "pause":
+            self.toggleFunc = "play"
+        self.buttons = {"share": "ct", "next": "rh", "prev": "lh",
+                        "pause": "cb",
+                        "play": "cb"}
+        self.icon = self.makeIcon(self.button)
+        self.parent.p.tag_bind(self.button, "<ButtonPress-1>", self.onClick)
+
+    def makeIcon(self, button):
+        pathlist = ("\\icons\\", self.button, ".png")
+        iconpath = ''.join(pathlist)
+        newImg = ImageTk.PhotoImage(
+            Image.open(os.path.join(self.parent.parent.baseDir + iconpath)))
+        return newImg
+
+    def createButton(self):
+        m = self.parent.m
+        coords = {"t": m.t, "b": m.b, "c": m.cPos, "h": m.ph, "l": m.l,
+                  "r": m.r}
+        (x, y) = self.buttons.get(self.button)
+        (x, y) = coords.get(x), coords.get(y)
+        self.parent.p.create_image(x, y, image=self.icon, anchor="center",
+                                   tags=(self.button, "button"))
+
+    def onClick(self, event):
+        if self.toggleFunc is not None:
+            self.parent.p.delete(self.button)
+            self.toggleFunc, self.button = self.button, self.toggleFunc
+            self.icon = self.makeIcon(self.button)
+            self.createButton()
+            self.parent.p.tag_bind(self.button, "<ButtonPress-1>",
+                                   self.onClick)
+        self.function()
+
+    def isToggler(self, secondbutton):
+        self.altIcon = self.makeIcon(secondbutton)
+
+
 class ssRoot(tk.Tk):
     def __init__(self, parent):
         tk.Tk.__init__(self, parent)
@@ -262,9 +306,9 @@ class slideShowWindow(tk.Toplevel):
         self.geometry("%dx%d%s%+d%+d" % self.m.dimensions)
         self.makePanel()
         self.bind('<Key-Escape>', self.closeWindow)
+        self.initButtons()
         self.p.bind('<Enter>', self.showButtons)
         self.p.bind('<Leave>', self.hideButtons)
-        self.p.tag_bind("open", "<ButtonPress-1>", self.openExternal)
         self.parent.childWindows += 1
 
     def makePanel(self):
@@ -285,12 +329,6 @@ class slideShowWindow(tk.Toplevel):
         self.p.artistWindow = self.p.create_window(self.m.pw, self.m.h,
                                                    anchor="s",
                                                    window=self.artistLabel)
-        self.nextButton = ttk.Button(self.p, text=">", command=self.nextImage)
-        self.prevButton = ttk.Button(self.p, text="<", command=self.prevImage)
-        self.pauseButton = ttk.Button(self.p, textvariable=self.running,
-                                      command=self.pauseUnpause)
-        self.shareImg = ImageTk.PhotoImage(
-            Image.open(os.path.join(self.parent.baseDir + '/icons/share.png')))
         self.nextAlarm = self.after(self.offset, self.il.updateActiveImage,
                                     False)
         self.running.set(True)
@@ -304,17 +342,17 @@ class slideShowWindow(tk.Toplevel):
             self.parent.childWindows -= 1
             self.destroy()
 
+    def initButtons(self):
+        self.buttons = dict()
+        buttonNames = {"next": self.nextImage, "prev": self.prevImage,
+                       "share": self.shareImage, "pause": self.pauseUnpause}
+        for name in buttonNames.keys():
+            self.buttons[name] = (fancyButton(self, name, buttonNames.get(
+                name)))
+
     def showButtons(self, event):
-        self.openButton = self.p.create_image(self.m.cPos, self.m.t,
-                                              image=self.shareImg,
-                                              anchor="center", tags=("open",
-                                                                     "button",))
-        self.p.create_window(self.m.r, self.m.ph, window=self.nextButton,
-                             tags="button")
-        self.p.create_window(self.m.cPos, self.m.b, window=self.pauseButton,
-                             tags="button")
-        self.p.create_window(self.m.l, self.m.ph, window=self.prevButton,
-                             tags="button")
+        for button in self.buttons.itervalues():
+            button.createButton()
 
     def hideButtons(self, event):
         self.p.delete("button")
@@ -328,15 +366,15 @@ class slideShowWindow(tk.Toplevel):
         self.il.nextImage()
 
     def pauseUnpause(self):
-        if self.running.get() == "Running":
+        if self.running.get():
             self.after_cancel(self.nextAlarm)
             self.running.set(False)
-            # unpause delay?
+            # restart delay needs fixed
         else:
             self.running.set(True)
             self.il.updateActiveImage("unpause")
 
-    def openExternal(self):
+    def shareImage(self):
         os.startfile(self.il.actImg.ordFName)
 
 
