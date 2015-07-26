@@ -45,17 +45,11 @@ class usableScreen:
         self.w = Win32Display.width
         self.h = Win32Display.height
         if self.x < 0:
-            self.cPos = int(self.w * 0.95)
-            self.layoutPos = "left"
-            self.gSign = '+'
+            self.setPos(0.5, "left", '+')
         if self.x > 0:
-            self.cPos = int(self.w * 0.05)
-            self.layoutPos = "right"
-            self.gSign = ''
+            self.setPos(0.5, "right", '')
         if self.x == 0:
-            self.cPos = int(self.w * 0.5)
-            self.layoutPos = "center"
-            self.gSign = ''
+            self.setPos(0.5, "center", '')
         self.dimensions = (self.w, self.h, self.gSign, self.x, self.y,)
         self.pw = self.w / 2
         self.ph = self.h / 2
@@ -63,6 +57,11 @@ class usableScreen:
         self.b = int(self.h * 0.95)
         self.l = int(self.w * 0.05)
         self.r = int(self.w * 0.95)
+
+    def setPos(self, percent, pos, string):
+        self.cPos = int(self.w * percent)
+        self.layoutPos = pos
+        self.gSign = string
 
 
 class imageList(object):
@@ -121,7 +120,7 @@ class imageList(object):
         else:
             self.parent.p.itemconfig(self.parent.p.artistWindow,
                                      state="normal")
-        if self.parent.running.get() == "Running":
+        if self.parent.running.get():
             func = self.nextImage
         else:
             func = self.passer
@@ -219,7 +218,7 @@ class ssRoot(tk.Tk):
             self.displayId += 1
 
     def setupShuffledList(self):
-        self.pImgList = list()
+        pImgList = list()
         os.chdir(self.folder)
         self.uniSource = os.getcwdu()
         for fname in os.listdir(self.uniSource):
@@ -227,19 +226,19 @@ class ssRoot(tk.Tk):
             if os.path.isdir(path):
                 continue
             if fname.endswith(('.jpg', '.png', '.jpeg', '.gif')):
-                self.pImgList.append(fname)
-        shuffle(self.pImgList)
+                pImgList.append(fname)
+        shuffle(pImgList)
         self.imageListArray = list()
-        for i in xrange(0, len(self.pImgList),
-                        int(len(self.pImgList) / self.numberOfMonitors)):
-            self.imageListArray.append(self.pImgList[i:i + (
-                int(len(self.pImgList) / self.numberOfMonitors))])
+        for i in xrange(0, len(pImgList),
+                        int(len(pImgList) / self.numberOfMonitors)):
+            self.imageListArray.append(pImgList[i:i + (
+                int(len(pImgList) / self.numberOfMonitors))])
 
     def initDisplays(self):
         self.display = pyglet.window.get_platform().get_default_display()
-        self.monlist = self.display.get_screens()
+        monlist = self.display.get_screens()
         self.monitors = list()
-        for each in self.monlist:
+        for each in monlist:
             self.monitors.append(usableScreen(each))
         self.startingOffset = self.interval / len(self.displaysToUse)
 
@@ -254,8 +253,8 @@ class slideShowWindow(tk.Toplevel):
         self.il = imageList(self, imagelist)
         self.artist = tk.StringVar()
         self.artist.set(None)
-        self.running = tk.StringVar()
-        self.running.set("Paused")
+        self.running = tk.BooleanVar()
+        self.running.set(False)
         self.style = ttk.Style()
         self.style.theme_use('clam')
         self.configure(background='black')
@@ -296,7 +295,7 @@ class slideShowWindow(tk.Toplevel):
                                     background='black', border='0')
         self.nextAlarm = self.after(self.offset, self.il.updateActiveImage,
                                     False)
-        self.running.set("Running")
+        self.running.set(True)
 
     def closeWindow(self, event):
         self.parent.totalImages.set(self.parent.totalImages.get() +
@@ -331,10 +330,10 @@ class slideShowWindow(tk.Toplevel):
     def pauseUnpause(self):
         if self.running.get() == "Running":
             self.after_cancel(self.nextAlarm)
-            self.running.set("Paused")
+            self.running.set(False)
             # unpause delay?
         else:
-            self.running.set("Running")
+            self.running.set(True)
             self.il.updateActiveImage("unpause")
 
     def openExternal(self):
