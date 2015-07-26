@@ -18,35 +18,66 @@ import pyglet
 
 
 def handleExceptions():
-    #with thanks to Brad Barrows:
-    #http://stackoverflow.com/questions/1508467/how-to-log-my-traceback-error
+    # with thanks to Brad Barrows:
+    # http://stackoverflow.com/questions/1508467/how-to-log-my-traceback-error
     old_print_exception = traceback.print_exception
-    def custom_print_exception(etype, value, tb, limit=None, file=None):
+
+    def custom_print_exception(etype, value, tb, limit=None, files=None):
         tb_output = StringIO.StringIO()
         traceback.print_tb(tb, limit, tb_output)
         log.error(tb_output.getvalue())
         tb_output.close()
         log.info('DevilScreens crashed at ' + time.strftime("%c"))
         sys.exit(1)
+
     traceback.print_exception = custom_print_exception
+
 
 def silenceErr():
     def write(self, s):
         pass
 
+
+class usableScreen:
+    def __init__(self, Win32Display):
+        self.x = Win32Display.x
+        self.y = Win32Display.y
+        self.w = Win32Display.width
+        self.h = Win32Display.height
+        if self.x < 0:
+            self.cPos = int(self.w * 0.95)
+            self.layoutPos = "left"
+            self.gSign = '+'
+        if self.x > 0:
+            self.cPos = int(self.w * 0.05)
+            self.layoutPos = "right"
+            self.gSign = ''
+        if self.x == 0:
+            self.cPos = int(self.w * 0.5)
+            self.layoutPos = "center"
+            self.gSign = ''
+        self.dimensions = (self.w, self.h, self.gSign, self.x, self.y,)
+        self.pw = self.w / 2
+        self.ph = self.h / 2
+        self.t = int(self.h * 0.05)
+        self.b = int(self.h * 0.95)
+        self.l = int(self.w * 0.05)
+        self.r = int(self.w * 0.95)
+
+
 class imageList(object):
     def __init__(self, parent, data):
         self.parent = parent
         self.intervalTime = self.parent.interval
-        self.filenames = wrappingList(data)
+        self.files = wrappingList(data)
         self.loadedIndex = tk.IntVar()
         self.loadedIndex.set(0)
         self.historyArray = collections.deque()
         for x in range(-20, 20):
-            self.historyArray.append(imageObject(self.filenames[x]))
+            self.historyArray.append(imageObject(self.files[x]))
 
     def __len__(self):
-        return len(self.filenames)
+        return len(self.files)
 
     def __getitem__(self, item):
         return self.historyArray[item % len(self.historyArray)]
@@ -58,49 +89,43 @@ class imageList(object):
         self.loadedIndex.set(self.loadedIndex.get() + 1)
         self.historyArray.popleft()
         self.historyArray.append(
-            imageObject(self.filenames[self.loadedIndex.get() + 20]))
+            imageObject(self.files[self.loadedIndex.get() + 20]))
         self.updateActiveImage("next")
 
     def prevImage(self):
         self.loadedIndex.set(self.loadedIndex.get() - 1)
         self.historyArray.pop()
         self.historyArray.appendleft(
-            imageObject(self.filenames[self.loadedIndex.get() - 20]))
+            imageObject(self.files[self.loadedIndex.get() - 20]))
         self.updateActiveImage("prev")
 
     def updateActiveImage(self, calledFromButton):
-        self.activeImage = self.historyArray[0]
-        self.activeImage.w, self.activeImage.h = \
-            self.parent.monitor.width, self.parent.monitor.height
-        self.activeImage.iw, self.activeImage.ih = self.activeImage.image.size
-        self.activeImage.ratio = min(self.activeImage.w / self.activeImage.iw,
-                                     self.activeImage.h / self.activeImage.ih)
-        self.activeImage.size = int(
-            self.activeImage.iw * self.activeImage.ratio), int(
-            self.activeImage.ih * self.activeImage.ratio)
-        self.activeImage.resized = self.activeImage.image.resize(
-            self.activeImage.size,
-            resample=Image.BICUBIC)
+        self.actImg = self.historyArray[0]
+        w, h = self.parent.m.w, self.parent.m.h
+        iw, ih = self.actImg.image.size
+        ratio = min(w / iw, h / ih)
+        size = int(iw * ratio), int(ih * ratio)
+        self.actImg.image = self.actImg.image.resize(size,
+                                                     resample=Image.BICUBIC)
         self.showImage(calledFromButton)
 
     def showImage(self, calledFromButton):
-        self.parent.panel.displayimg = ImageTk.PhotoImage(
-            self.activeImage.resized)
-        self.parent.panel.itemconfig(self.parent.panel.show,
-                                     image=self.parent.panel.displayimg)
-        self.parent.artist.set(self.activeImage.artist)
+        self.parent.p.displayimg = ImageTk.PhotoImage(
+            self.actImg.image)
+        self.parent.p.itemconfig(self.parent.p.show,
+                                 image=self.parent.p.displayimg)
+        self.parent.artist.set(self.actImg.artist)
         if self.parent.artist.get() == "":
-            self.parent.panel.itemconfig(self.parent.panel.artistWindow,
-                                         state="hidden")
+            self.parent.p.itemconfig(self.parent.p.artistWindow,
+                                     state="hidden")
         else:
-            self.parent.panel.itemconfig(self.parent.panel.artistWindow,
-                                         state="normal")
+            self.parent.p.itemconfig(self.parent.p.artistWindow,
+                                     state="normal")
         if self.parent.running.get() == "Running":
-            self.func = self.nextImage
-        if self.parent.running.get() == "Paused":
-            self.func = self.passer
-        self.parent.nextAlarm = self.parent.after(self.intervalTime,
-                                                  self.func)
+            func = self.nextImage
+        else:
+            func = self.passer
+        self.parent.nextAlarm = self.parent.after(self.intervalTime, func)
 
 
 class wrappingList(collections.Sequence):
@@ -141,7 +166,7 @@ class imageObject(object):
             print each + " : " + vars(self)[each]
 
 
-class root(tk.Tk):
+class ssRoot(tk.Tk):
     def __init__(self, parent):
         tk.Tk.__init__(self, parent)
         self.childWindows = 0
@@ -194,7 +219,7 @@ class root(tk.Tk):
             self.displayId += 1
 
     def setupShuffledList(self):
-        self.preImageList = list()
+        self.pImgList = list()
         os.chdir(self.folder)
         self.uniSource = os.getcwdu()
         for fname in os.listdir(self.uniSource):
@@ -202,17 +227,20 @@ class root(tk.Tk):
             if os.path.isdir(path):
                 continue
             if fname.endswith(('.jpg', '.png', '.jpeg', '.gif')):
-                self.preImageList.append(fname)
-        shuffle(self.preImageList)
+                self.pImgList.append(fname)
+        shuffle(self.pImgList)
         self.imageListArray = list()
-        for i in xrange(0, len(self.preImageList),
-                        int(len(self.preImageList) / self.numberOfMonitors)):
-            self.imageListArray.append(self.preImageList[i:i + (
-                int(len(self.preImageList) / self.numberOfMonitors))])
+        for i in xrange(0, len(self.pImgList),
+                        int(len(self.pImgList) / self.numberOfMonitors)):
+            self.imageListArray.append(self.pImgList[i:i + (
+                int(len(self.pImgList) / self.numberOfMonitors))])
 
     def initDisplays(self):
         self.display = pyglet.window.get_platform().get_default_display()
-        self.monitors = self.display.get_screens()
+        self.monlist = self.display.get_screens()
+        self.monitors = list()
+        for each in self.monlist:
+            self.monitors.append(usableScreen(each))
         self.startingOffset = self.interval / len(self.displaysToUse)
 
 
@@ -220,10 +248,10 @@ class slideShowWindow(tk.Toplevel):
     def __init__(self, parent, monitor, imagelist, interval, offset):
         tk.Toplevel.__init__(self, parent)
         self.parent = parent
-        self.monitor = monitor
+        self.m = monitor
         self.offset = offset
         self.interval = interval
-        self.imageList = imageList(self, imagelist)
+        self.il = imageList(self, imagelist)
         self.artist = tk.StringVar()
         self.artist.set(None)
         self.running = tk.StringVar()
@@ -231,75 +259,48 @@ class slideShowWindow(tk.Toplevel):
         self.style = ttk.Style()
         self.style.theme_use('clam')
         self.configure(background='black')
-        # make it cover the entire screen
         self.overrideredirect(1)
-        if self.monitor.x < 0:
-            self.geometry(
-                "%dx%d+%+d%+d" % (self.monitor.width, self.monitor.height,
-                                  self.monitor.x, self.monitor.y))
-        else:
-            self.geometry(
-                "%dx%d%+d%+d" % (self.monitor.width, self.monitor.height,
-                                 self.monitor.x, self.monitor.y))
-        if self.monitor.x > 1000:
-            # work on this logic - should sum all monitors' width to get total
-            # canvas, then determine percentages of
-            # canvas occupied by each screen. Can then set commandpos according
-            # to margin of each. can also set update order based on this =
-            # reorder monitorlist in place before iterating constructors.
-            self.commandpos = 0.05
-        else:
-            self.commandpos = 0.95
+        self.geometry("%dx%d%s%+d%+d" % self.m.dimensions)
         self.makePanel()
         self.bind('<Key-Escape>', self.closeWindow)
-        self.panel.bind('<Enter>', self.showButtons)
-        self.panel.bind('<Leave>', self.hideButtons)
+        self.p.bind('<Enter>', self.showButtons)
+        self.p.bind('<Leave>', self.hideButtons)
         self.parent.childWindows += 1
 
     def makePanel(self):
-        self.panel = tk.Canvas(self, bd=0, highlightthickness=0)
-        self.panel.pack(fill="both", expand=1)
-        self.panel.pw = self.monitor.width / 2
-        self.panel.ph = self.monitor.height / 2
-        self.panel.configure(background='black')
-        self.panel.imagetoshow = None
-        self.panel.show = self.panel.create_image(self.panel.pw,
-                                                  self.panel.ph,
-                                                  image=self.panel.imagetoshow,
-                                                  anchor="center", tags="IMG")
+        self.p = tk.Canvas(self, bd=0, highlightthickness=0)
+        self.p.pack(fill="both", expand=1)
+        self.p.configure(background='black')
+        self.p.imagetoshow = None
+        self.p.show = self.p.create_image(self.m.pw, self.m.ph,
+                                          image=self.p.imagetoshow,
+                                          anchor="center", tags="IMG")
         if self.parent.debugIndex is True:
-            self.label = tk.Label(self.panel,
-                                  textvariable=self.imageList.loadedIndex,
+            self.label = tk.Label(self.p, textvariable=self.il.loadedIndex,
                                   font=("Calibri", "36"), background="white")
-            self.panel.create_window(self.monitor.width / 2,
-                                     self.monitor.height / 2,
-                                     window=self.label)
-        self.artistLabel = tk.Label(self.panel,
-                                    textvariable=self.artist,
+            self.p.create_window(self.m.pw, self.m.ph, window=self.label)
+        self.artistLabel = tk.Label(self.p, textvariable=self.artist,
                                     font=("Calibri", "16"), fg="white",
                                     background="black")
-        self.panel.artistWindow = self.panel.create_window(
-            self.monitor.width / 2, self.monitor.height, anchor="s",
-            window=self.artistLabel)
-        self.nextButton = ttk.Button(self.panel, text=">",
-                                     command=self.nextImage)
-        self.prevButton = ttk.Button(self.panel, text="<",
-                                     command=self.prevImage)
-        self.pauseButton = ttk.Button(self.panel, textvariable=self.running,
+        self.p.artistWindow = self.p.create_window(self.m.pw, self.m.h,
+                                                   anchor="s",
+                                                   window=self.artistLabel)
+        self.nextButton = ttk.Button(self.p, text=">", command=self.nextImage)
+        self.prevButton = ttk.Button(self.p, text="<", command=self.prevImage)
+        self.pauseButton = ttk.Button(self.p, textvariable=self.running,
                                       command=self.pauseUnpause)
-        self.shareImg = ImageTk.PhotoImage(Image.open(os.path.join(
-            self.parent.baseFolder + '/share.png')))
-        self.openButton = tk.Button(self.panel, image=self.shareImg,
-                                     command=self.openExternal,
+        self.shareImg = ImageTk.PhotoImage(
+            Image.open(os.path.join(self.parent.baseFolder + '/share.png')))
+        self.openButton = tk.Button(self.p, image=self.shareImg,
+                                    command=self.openExternal,
                                     background='black', border='0')
-        self.nextAlarm = self.after(self.offset,
-                                    self.imageList.updateActiveImage,
+        self.nextAlarm = self.after(self.offset, self.il.updateActiveImage,
                                     False)
         self.running.set("Running")
 
     def closeWindow(self, event):
         self.parent.totalImages.set(self.parent.totalImages.get() +
-                                    self.imageList.loadedIndex.get())
+                                    self.il.loadedIndex.get())
         if self.parent.childWindows == 1:
             self.parent.destroy()
         else:
@@ -307,40 +308,38 @@ class slideShowWindow(tk.Toplevel):
             self.destroy()
 
     def showButtons(self, event):
-        self.panel.create_window(int(self.monitor.width * 0.95),
-                                 self.monitor.height / 2,
-                                 window=self.nextButton, tags="button")
-        self.panel.create_window(int(self.monitor.width * self.commandpos),
-                                 int(self.monitor.height * 0.95),
-                                 window=self.pauseButton, tags="button")
-        self.panel.create_window(int(self.monitor.width * self.commandpos),
-                                 int(self.monitor.height * 0.05),
-                                 window=self.openButton, tags="button")
-        self.panel.create_window(int(self.monitor.width * 0.05),
-                                 self.monitor.height / 2,
-                                 window=self.prevButton, tags="button")
+        self.p.create_window(self.m.r, self.m.ph, window=self.nextButton,
+                             tags="button")
+        self.p.create_window(self.m.cPos, self.m.b, window=self.pauseButton,
+                             tags="button")
+        self.p.create_window(self.m.cPos, self.m.t, window=self.openButton,
+                             tags="button")
+        self.p.create_window(self.m.l, self.m.ph, window=self.prevButton,
+                             tags="button")
 
     def hideButtons(self, event):
-        self.panel.delete("button")
+        self.p.delete("button")
 
     def prevImage(self):
         self.after_cancel(self.nextAlarm)
-        self.imageList.prevImage()
+        self.il.prevImage()
 
     def nextImage(self):
         self.after_cancel(self.nextAlarm)
-        self.imageList.nextImage()
+        self.il.nextImage()
 
     def pauseUnpause(self):
         if self.running.get() == "Running":
             self.after_cancel(self.nextAlarm)
             self.running.set("Paused")
+            # unpause delay?
         else:
             self.running.set("Running")
-            self.imageList.updateActiveImage("unpause")
+            self.il.updateActiveImage("unpause")
 
     def openExternal(self):
-        os.startfile(self.imageList.activeImage.ordFName)
+        os.startfile(self.il.actImg.ordFName)
+
 
 handleExceptions()
 logfilename = 'system.log'
@@ -350,7 +349,7 @@ handler = logging.StreamHandler(stream=sys.stdout)
 log.addHandler(handler)
 log.info('DevilScreens started at ' + time.strftime("%c"))
 
-root = root(None)
+root = ssRoot(None)
 root.withdraw()
 
 root.mainloop()
