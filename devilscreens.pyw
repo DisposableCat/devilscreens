@@ -237,6 +237,7 @@ class ssRoot(tk.Tk):
             self.displaysToUse = self.config.get('Config', 'monitors')
             self.displaysToUse = self.displaysToUse.split(',')
             self.displaysToUse = map(int, self.displaysToUse)
+            self.displaysToUse[:] = [x - 1 for x in self.displaysToUse]
             self.numberOfMonitors = len(self.displaysToUse)
             self.interval = self.config.getint('Config', 'interval') * 1000
             self.folder = self.config.get('Config', 'folder')
@@ -274,7 +275,7 @@ class ssRoot(tk.Tk):
         for count, each in enumerate(self.displaysToUse):
             offset = int(self.startingOffset * self.displayId)
             self.displaysUsed.append(slideShowWindow(self, self.monitors[
-                count], self.imageListArray[count], self.interval, offset,
+                each], self.imageListArray[count], self.interval, offset,
                                                      self.themes[count]))
             self.displayId += 1
 
@@ -355,7 +356,7 @@ class slideShowWindow(tk.Toplevel):
         self.running.set(True)
 
     def closeWindow(self, event):
-        #total is buggy as fuck, need to fix
+        # total is buggy as fuck, need to fix
         self.parent.totalImages.set(self.parent.totalImages.get() +
                                     self.il.loadedIndex.get())
         if self.parent.childWindows == 1:
