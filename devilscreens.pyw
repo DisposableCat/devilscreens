@@ -289,6 +289,9 @@ class ssRoot(tk.Tk):
                 continue
             if fname.endswith(('.jpg', '.png', '.jpeg', '.gif')):
                 pImgList.append(fname)
+        if len(pImgList) == 0:
+            log.error("There are no images in the source folder! Exiting")
+            exit()
         shuffle(pImgList)
         self.imageListArray = list()
         for i in xrange(0, len(pImgList),
