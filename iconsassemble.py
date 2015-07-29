@@ -11,7 +11,7 @@ def iconAssembler(button, template, color, background):
     icon = Image.open("themes\\" + template + "\\" + button + ".png")
     icon = icon.convert('RGBA')
     replaceStroke(icon, color)
-    icon.show()
+    #icon.show()
     mask = Image.open("themes\\" + template + "\\" + button + "Mask.png")
     mask = mask.convert('L')
 #    mask.show()
@@ -28,9 +28,8 @@ def replaceStroke(icon, color):
     for y in xrange(icon.size[1]):
         for x in xrange(icon.size[0]):
             pix = icon.load()
-            if icon[x,y] == (0,0,0,0):
-                rgb.append(a)
-                icon.putpixel((x,y), rgb)
+            if pix[x,y][0:2] == (0,0,0):
+                pix[x,y][0:2] = rgb
 
 if __name__ == '__main__':
     iconAssembler(button, template, color, background)
