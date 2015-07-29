@@ -3,7 +3,7 @@ from PIL import Image
 button = "pause"
 template = "clearCircles"
 background = "back"
-color = "#ff00ff"
+color = "#000080"
 
 def iconAssembler(button, template, color, background):
     back = Image.open("themes\\backgrounds\\" + background + ".png")
@@ -23,15 +23,23 @@ def iconAssembler(button, template, color, background):
     final.save("themes\\backgrounds\\test.png")
     return status
 
+def cvHex(hexstr):
+    return (int(hexstr,16))
+
 def replaceStroke(icon, color):
-    rgb = (int(color[1:2], 16), int(color[3:4], 16), int(color[5:6],
-                                                                16),255)
+    rgb = list((cvHex(color[1:3]), cvHex(color[3:5]), cvHex(color[5:7])))
     print rgb
     pix = icon.load()
     for y in xrange(icon.size[1]):
         for x in xrange(icon.size[0]):
-            if pix[x,y] == (0,0,0,255):
-                pix[x,y] = rgb
+            if pix[x,y][0:3] == (0,0,0):
+                if pix[x,y][3] > 64:
+                    rgbt = list(rgb)
+                    rgbt.append(pix[x,y][3])
+                    rgbt = tuple(rgbt)
+                    pix[x,y] = rgbt
+            else:
+                print pix[x,y]
     return icon
 
 if __name__ == '__main__':
