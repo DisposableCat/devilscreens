@@ -3,7 +3,7 @@ from PIL import Image
 button = "pause"
 template = "clearCircles"
 background = "back"
-color = "#000000"
+color = "#ff00ff"
 
 def iconAssembler(button, template, color, background):
     back = Image.open("themes\\backgrounds\\" + background + ".png")
@@ -11,15 +11,26 @@ def iconAssembler(button, template, color, background):
     icon = Image.open("themes\\" + template + "\\" + button + ".png")
     icon = icon.convert('RGBA')
     replaceStroke(icon, color)
+    icon.show()
     mask = Image.open("themes\\" + template + "\\" + button + "Mask.png")
     mask = mask.convert('L')
 #    mask.show()
     back.putalpha(mask)
 #    back.show()
     final = Image.alpha_composite(back, icon)
+    status = "Successfully generated icons!"
     final.save("themes\\backgrounds\\test.png")
+    return status
 
 def replaceStroke(icon, color):
-    for y in xrange(icon.size[0])
+    rgb = list((int(color[1:2], 16), int(color[3:4], 16), int(color[5:6],
+                                                                16)))
+    for y in xrange(icon.size[1]):
+        for x in xrange(icon.size[0]):
+            pix = icon.load()
+            if icon[x,y] == (0,0,0,0):
+                rgb.append(a)
+                icon.putpixel((x,y), rgb)
 
-iconAssembler(button, template, color, background)
+if __name__ == '__main__':
+    iconAssembler(button, template, color, background)
