@@ -3,7 +3,7 @@ from PIL import Image
 button = "pause"
 template = "clearCircles"
 background = "back"
-stroke = "#00aa00"
+stroke = "#000000"
 fade = "#000080"
 
 
@@ -35,29 +35,44 @@ def replaceColors(icon, stroke, fade):
     frgb = list((cvHex(fade[1:3]), cvHex(fade[3:5]), cvHex(fade[5:7])))
     print srgb
     pix = icon.load()
+
+    def replaceFade(frgb, pix):
+        rgbt = list(frgb)
+        if pix[x, y][3] < 200:
+            pass
+            # rgbt[0] = rgbt[0] - (255 - pix[x, y][0])
+            # rgbt[1] = rgbt[1] - (255 - pix[x, y][1])
+            # rgbt[2] = rgbt[2] - (255 - pix[x, y][2])
+        rgbt.append(pix[x, y][3])
+        rgbt = tuple(rgbt)
+        pix[x, y] = rgbt
+        return pix
+
+    def replaceStroke(srgb, pix):
+        rgbt = list(srgb)
+        # rgbt[0] = rgbt[0] - (255 - pix[x, y][0])
+        rgbt[1] -= 255 - pix[x, y][1]
+        # rgbt[2] = rgbt[2] - (255 - pix[x, y][2])
+        rgbt.append(pix[x, y][3])
+        rgbt = tuple(rgbt)
+        pix[x, y] = rgbt
+        return pix
+
     for y in xrange(icon.size[1]):
         for x in xrange(icon.size[0]):
-            if (pix[x, y][0] - pix[x,y][1]) < 10:
-                if pix[x, y][3] > 200:
-                    rgbt = list(srgb)
-                    if pix[x,y] > (32,32,32):
-                        rgbt[0] = rgbt[0] - (255 - pix[x, y][0])
-                        rgbt[1] = rgbt[1] - (255 - pix[x, y][1])
-                        rgbt[2] = rgbt[2] - (255 - pix[x, y][2])
-                    rgbt.append(pix[x, y][3])
-                    rgbt = tuple(rgbt)
-                    pix[x, y] = rgbt
-            elif pix[x, y][0] > (100) and pix[x, y][1:3] < (64, 64):
-                if pix[x, y][3] < 200:
-                    rgbt = list(frgb)
-                    rgbt[0] = rgbt[0] - (255 - pix[x, y][0])
-                    #rgbt[1] = rgbt[1] - (255 - pix[x, y][1])
-                    #rgbt[2] = rgbt[2] - (255 - pix[x, y][2])
-                    rgbt.append(pix[x, y][3])
-                    rgbt = tuple(rgbt)
-                    pix[x, y] = rgbt
-            else:
-                print pix[x, y]
+            if pix[x, y][0:3] in ((0,0,0),(255,255,255)):
+                continue
+            if (pix[x, y][0] - pix[x,y][2]) < 150:
+                if pix[x, y][1] < 255:
+                    pix = replaceFade(frgb,pix)
+            if pix[x, y][0] == pix[x, y][2]: #and pix[x, y][1] is not 255:
+                pix = replaceStroke(srgb,pix)
+                continue
+            # if pix[x, y][1] == 255:
+            #     pix = replaceStroke(srgb,pix)
+
+
+
     return icon
 
 
