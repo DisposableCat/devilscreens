@@ -3,7 +3,7 @@ from PIL import Image
 button = "pause"
 template = "clearCircles"
 background = "back"
-stroke = "#000000"
+stroke = "#aa0000"
 fade = "#000080"
 
 
@@ -36,23 +36,8 @@ def replaceColors(icon, stroke, fade):
     print srgb
     pix = icon.load()
 
-    def replaceFade(frgb, pix):
-        rgbt = list(frgb)
-        if pix[x, y][3] < 200:
-            pass
-            # rgbt[0] = rgbt[0] - (255 - pix[x, y][0])
-            # rgbt[1] = rgbt[1] - (255 - pix[x, y][1])
-            # rgbt[2] = rgbt[2] - (255 - pix[x, y][2])
-        rgbt.append(pix[x, y][3])
-        rgbt = tuple(rgbt)
-        pix[x, y] = rgbt
-        return pix
-
-    def replaceStroke(srgb, pix):
-        rgbt = list(srgb)
-        # rgbt[0] = rgbt[0] - (255 - pix[x, y][0])
-        rgbt[1] -= 255 - pix[x, y][1]
-        # rgbt[2] = rgbt[2] - (255 - pix[x, y][2])
+    def replaceColor(rgb, pix):
+        rgbt = list(rgb)
         rgbt.append(pix[x, y][3])
         rgbt = tuple(rgbt)
         pix[x, y] = rgbt
@@ -60,19 +45,25 @@ def replaceColors(icon, stroke, fade):
 
     for y in xrange(icon.size[1]):
         for x in xrange(icon.size[0]):
-            if pix[x, y][0:3] in ((0,0,0),(255,255,255)):
+            currentPixel = pix[x, y]
+            if currentPixel[0:3] in ((0,0,0),(255,255,255)):
                 continue
-            if (pix[x, y][0] - pix[x,y][2]) < 150:
-                if pix[x, y][1] < 255:
-                    pix = replaceFade(frgb,pix)
-            if pix[x, y][0] == pix[x, y][2]: #and pix[x, y][1] is not 255:
-                pix = replaceStroke(srgb,pix)
+            elif currentPixel[3] == 999:
                 continue
+            elif min(currentPixel[0:3]) > 250:
+                continue
+            elif max(currentPixel[0:3]) == currentPixel[1]:
+                if currentPixel[1] > 64:
+                    pix = replaceColor(srgb, pix)
+                    continue
+            elif max(currentPixel[0:3]) == currentPixel[0]:
+                pix = replaceColor(frgb,pix)
+                continue
+            # elif currentPixel[0] == currentPixel[2]:
+            #     pix = replaceColor(srgb,pix)
+            #     continue
             # if pix[x, y][1] == 255:
             #     pix = replaceStroke(srgb,pix)
-
-
-
     return icon
 
 
