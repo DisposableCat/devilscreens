@@ -22,7 +22,7 @@ import pyglet
 
 def handleExceptions():
     # with thanks to Brad Barrows:
-    # http://stackoverflow.com/questions/1508467/how-to-log-my-traceback-error
+    # http://stackoverflow.com/questions/1508467/
     old_print_exception = traceback.print_exception
 
     def custom_print_exception(etype, value, tb, limit=None, files=None):
