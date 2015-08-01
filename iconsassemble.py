@@ -42,8 +42,8 @@ def cvHex(hexstr):
 def iCanTellBySomeOfThePixels(icon, pic1, pic2, pic3):
     for y in xrange(icon.size[0]):
         for x in xrange(icon.size[1]):
-            currentPixel = pic1[x,y]
-            comparePixel = pic2[x,y]
+            currentPixel = pic1[x, y]
+            comparePixel = pic2[x, y]
             if currentPixel == comparePixel:
                 continue
             if currentPixel[0] == 0:
