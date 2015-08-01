@@ -1,23 +1,25 @@
 from __future__ import division
 from PIL import Image
+import copy
 
 button = "pause"
 template = "clearCircles"
 background = "back"
-stroke = "#aa0000"
-fade = "#000080"
+stroke = "#ff9933"
+fade = "#33cc66"
 
 def redistribute_rgb(r, g, b):
     #with thanks to Mark Ransom:
     #http://stackoverflow.com/questions/141855/
     threshold = 255.999
     m = max(r, g, b)
-    if m <= threshold:
-        return int(r), int(g), int(b)
     total = r + g + b
     if total >= 3 * threshold:
         return int(threshold), int(threshold), int(threshold)
-    x = (3 * threshold - total) / (3 * m - total)
+    notzero = (3 * m - total)
+    if notzero == 0:
+        notzero = 1
+    x = (3 * threshold - total) / notzero
     gray = threshold - x * m
     return int(gray + x * r), int(gray + x * g), int(gray + x * b)
 
@@ -44,31 +46,44 @@ def iconAssembler(button, template, stroke, fade, background):
 def cvHex(hexstr):
     return (int(hexstr, 16))
 
-def iCanTellBySomeOfThePixels(icon, pic1, pic2):
+
+def iCanTellBySomeOfThePixels(icon, pic1, pic2, pic3):
     for y in xrange(icon.size[0]):
         for x in xrange(icon.size[1]):
             currentPixel = pic1[x,y]
             comparePixel = pic2[x,y]
-            if currentPixel is not comparePixel:
-                if currentPixel[3] is not 0:
-                    print str(currentPixel) + " should be " + str(comparePixel)
+            if currentPixel == comparePixel:
+                continue
+            if currentPixel[0] == 0:
+                continue
+            elif currentPixel[3] is not 0:
+                print str(currentPixel[0:3]) + " should be " + str(
+                    comparePixel[0:3]) + " from " + str(pic3[x, y][0:3])
 
 def replaceColors(icon, stroke, fade):
     srgb = list((cvHex(stroke[1:3]), cvHex(stroke[3:5]), cvHex(stroke[5:7])))
     frgb = list((cvHex(fade[1:3]), cvHex(fade[3:5]), cvHex(fade[5:7])))
     print srgb
     pix = icon.load()
+    orig = icon.copy()
+    opix = orig.load()
     compare = Image.open("themes\\clearCircles\\test.png")
     cpix = compare.load()
 
     def replaceColor(rgb, pix):
         r, g, b = rgb[0:3]
         pr, pg, pb, pa = pix[x, y][0:]
-        if pr > 0:
-            lightShade = pr + pg + pb
-            multiplier = lightShade/255
-            r, b, g = redistribute_rgb(r*multiplier,g*multiplier,
-                                         b*multiplier)
+        if max(pr, pg, pb) == pg:
+            if max(r, g, b) == r:
+                r = pg
+            if max(r, g, b) == g:
+                g = pg
+            if max(r, g, b) == b:
+                b = pg
+        lightShade = pr + pg + pb
+        multiplier = lightShade / 255
+        r, b, g = redistribute_rgb(r * multiplier, g * multiplier,
+                                   b * multiplier)
         rgbt = (r, b, g, pa)
         pix[x, y] = rgbt
         return pix
@@ -89,7 +104,7 @@ def replaceColors(icon, stroke, fade):
             elif max(currentPixel[0:3]) == currentPixel[0]:
                 pix = replaceColor(frgb, pix)
                 continue
-    iCanTellBySomeOfThePixels(icon, pix, cpix)
+    iCanTellBySomeOfThePixels(icon, pix, cpix, opix)
     return icon
 
 
