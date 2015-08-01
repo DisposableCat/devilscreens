@@ -258,10 +258,10 @@ class ssRoot(tk.Tk):
             backgrounds = backgrounds.split(',')
             self.backgrounds = wrappingList(backgrounds)
             colors = self.config.get("Theme", "colors")
-            colors = colors.split('/')
+            colors = colors.split(',')
             tcolors = list()
             for each in colors:
-                tcolors.append(each.split(','))
+                tcolors.append(each.split('/'))
             self.colors = wrappingList(tcolors)
             self.debugIndex = self.config.getboolean('Debug', 'index display')
         else:
