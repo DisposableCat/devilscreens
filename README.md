@@ -18,7 +18,8 @@ we'll troubleshoot so that I can fix it.
 
 You can get Pyglet from pip install pyglet.
 
-If you're on Windows, get PIL from here: http://www.lfd.uci.edu/~gohlke/pythonlibs/
+If you're on Windows, get Pillow from here: http://www.lfd.uci
+.edu/~gohlke/pythonlibs/
 
 Once you've got all that, download the repo and run devilscreens.pyw.
 
