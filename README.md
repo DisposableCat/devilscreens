@@ -44,7 +44,7 @@ currently two themes included. Themes represent button shapes and the
 appropriate Photoshop layer effects to make them look good. They are 
 combined with colors and backgrounds to generate button graphics on the fly 
 in a highly customizable way.
-- Colors: The colors to use for your chosen themes, in "0xrrggbb" hex code 
+- Colors: The colors to use for your chosen themes, in ```0xrrggbb``` hex code 
 format. There should be the same number of colors as the number of 
 non-background/mask layers in your chosen themes, separated by ```/```. 
 Multiple colorsets can be comma-separated. ```/same/``` as a color choice will 
@@ -76,8 +76,12 @@ Theme Format
  layer with the color specified in the INI at the same alpha. If you want to
   use sensible default values, go ahead - I use bright neon green and pink 
   because of how I hoped to implement this feature (which didn't work out). 
-  I suggest using 0xffffff/same/0x000000 with my themes for most backgrounds, 
+  I suggest using ```0xffffff/same/0x000000``` with my themes for most backgrounds, 
   but play with it.
+ - I've included, under Docs, a modified version of Photoshop CS6's "Export 
+ Layers to Files.jsx" script, which exports layers to files with the 
+ filenames set to be exactly what the layer names are. This streamlines 
+ saving all the individual bits of a theme.
 
 Other Stuff
 -----------
