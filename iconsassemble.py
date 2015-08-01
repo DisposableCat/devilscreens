@@ -1,24 +1,23 @@
 from __future__ import division
 from PIL import Image
-
-button = "pause"
-template = "clearCircles"
-background = "back"
-colors = ("#ba5e45", "same", "#079ad8")
+import os
 
 
-def iconAssembler(button, template, colors, background):
-    back = Image.open("themes\\backgrounds\\" + background + ".png")
+def iconAssembler(basedir, button, template, colors, background):
+    backDir = os.path.join(basedir, "themes", "backgrounds", '')
+    themeDir = os.path.join(basedir, "themes")
+    back = Image.open(os.path.join(backDir + str(background + ".png")))
     back = back.convert('RGBA')
-    mask = Image.open("themes\\" + template + "\\" + button + "Mask.png")
+    mask = Image.open(os.path.join(themeDir, template, str(button +
+                                                           "Mask.png")))
     mask = mask.convert('L')
     back.putalpha(mask)
     layers = list()
     for count, color in enumerate(colors):
         filename = ''
         try:
-            filename = "themes\\" + template + "\\" + button + str(
-                count) + ".png"
+            filename = os.path.join(themeDir, template, str(button + str(
+                count) + ".png"))
             layer = Image.open(filename)
         except:
             status = "Not enough colors! Can't open " + filename
@@ -55,7 +54,7 @@ def iCanTellBySomeOfThePixels(icon, pic1, pic2, pic3):
 
 
 def replaceColors(icon, color):
-    rgb = list((cvHex(color[1:3]), cvHex(color[3:5]), cvHex(color[5:7])))
+    rgb = list((cvHex(color[2:4]), cvHex(color[4:6]), cvHex(color[6:8])))
     pix = icon.load()
     for y in xrange(icon.size[1]):
         for x in xrange(icon.size[0]):
@@ -67,5 +66,11 @@ def replaceColors(icon, color):
 
 
 if __name__ == '__main__':
-    _, stuff = iconAssembler(button, template, colors, background)
+    button = "pause"
+    template = "circled"
+    background = "tiger"
+    colors = ("#ba5e45", "same", "#079ad8")
+
+    _, stuff = iconAssembler(os.getcwdu(), button, template, colors,
+                             background)
     stuff.save("0.png")

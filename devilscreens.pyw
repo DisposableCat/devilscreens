@@ -15,6 +15,7 @@ import traceback
 from PIL import Image
 from PIL import ImageTk
 import pyglet
+from iconsassemble import iconAssembler
 
 
 # Copyright (c) 2015 Peter K Cawley. Released under MIT license; see
@@ -183,11 +184,17 @@ class fancyButton:
         self.parent.p.tag_bind(self.button, "<ButtonPress-1>", self.onClick)
 
     def makeIcon(self, button):
-        pathlist = ("\\themes\\", self.parent.theme, "\\" + self.button,
-                    ".png")
-        iconpath = ''.join(pathlist)
-        newImg = ImageTk.PhotoImage(
-            Image.open(os.path.join(self.parent.parent.baseDir + iconpath)))
+        status, newImg = iconAssembler(self.parent.baseDir, button,
+                                       self.parent.theme,
+                                       self.parent.colors,
+                                       self.parent.background)
+        if newImg is None:
+            log.error(status)
+            # try again with default values
+            status, newImg = iconAssembler(self.parent.baseDir, button,
+                                           "circled", "0xffffff,same,0x000000",
+                                           "silver")
+        newImg = ImageTk.PhotoImage(newImg)
         return newImg
 
     def createButton(self):
@@ -247,6 +254,15 @@ class ssRoot(tk.Tk):
             themes = self.config.get("Theme", "themes")
             themes = themes.split(',')
             self.themes = wrappingList(themes)
+            backgrounds = self.config.get("Theme", "backgrounds")
+            backgrounds = backgrounds.split(',')
+            self.backgrounds = wrappingList(backgrounds)
+            colors = self.config.get("Theme", "colors")
+            colors = colors.split('/')
+            tcolors = list()
+            for each in colors:
+                tcolors.append(each.split(','))
+            self.colors = wrappingList(tcolors)
             self.debugIndex = self.config.getboolean('Debug', 'index display')
         else:
             self.writeConfig()
@@ -262,7 +278,9 @@ class ssRoot(tk.Tk):
         self.config.set('Config', 'text color', "white")
         self.config.set('Config', 'monitors', "1")
         self.config.add_section("Theme")
-        self.config.set("Theme", "themes", "roundSilver")
+        self.config.set("Theme", "themes", "circled")
+        self.config.set("Theme", "backgrounds", "silver")
+        self.config.set("Theme", "colors", "0xffffff,same,0x000000")
         self.config.add_section('Debug')
         self.config.set('Debug', 'index display', 'no')
         with open('slideshow.ini', 'wb') as configfile:
@@ -276,7 +294,9 @@ class ssRoot(tk.Tk):
             offset = int(self.startingOffset * self.displayId)
             self.displaysUsed.append(slideShowWindow(self, self.monitors[
                 each], self.imageListArray[count], self.interval, offset,
-                                                     self.themes[count]))
+                                                     self.themes[count],
+                                                     self.colors[count],
+                                                     self.backgrounds[count]))
             self.displayId += 1
 
     def setupShuffledList(self):
@@ -311,13 +331,17 @@ class ssRoot(tk.Tk):
 
 
 class slideShowWindow(tk.Toplevel):
-    def __init__(self, parent, monitor, imagelist, interval, offset, theme):
+    def __init__(self, parent, monitor, imagelist, interval, offset, theme,
+                 colors, background):
         tk.Toplevel.__init__(self, parent)
         self.parent = parent
+        self.baseDir = parent.baseDir
         self.m = monitor
         self.offset = offset
         self.interval = interval
         self.theme = theme
+        self.colors = colors
+        self.background = background
         self.il = imageList(self, imagelist)
         self.artist = tk.StringVar()
         self.artist.set(None)
