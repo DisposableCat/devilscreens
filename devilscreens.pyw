@@ -2,6 +2,7 @@
 """devilscreens.pyw: a configurable multimonitor slideshow"""
 from __future__ import division
 import Tkinter as tk
+import ttk
 import os
 from random import shuffle
 import ConfigParser
@@ -236,11 +237,12 @@ class ssRoot(tk.Tk):
         log.info("Interval = " + str(self.interval))
         self.initDisplays()
         self.setupShuffledList()
-        self.startShow()
+        self.configGui()
+        # self.startShow()
 
     def readConfig(self):
-        if os.path.exists("slideshow.ini"):
-            self.config.read("slideshow.ini")
+        if os.path.exists(os.path.join(self.baseDir, "slideshow.ini")):
+            self.config.read(os.path.join(self.baseDir, "slideshow.ini"))
             self.displaysToUse = self.config.get('Config', 'monitors')
             self.displaysToUse = self.displaysToUse.split(',')
             self.displaysToUse = map(int, self.displaysToUse)
@@ -283,10 +285,22 @@ class ssRoot(tk.Tk):
         self.config.set("Theme", "colors", "0xffffff,same,0x000000")
         self.config.add_section('Debug')
         self.config.set('Debug', 'index display', 'no')
-        with open('slideshow.ini', 'wb') as configfile:
+        with open(os.path.join(self.baseDir, 'slideshow.ini'), 'wb') as \
+                configfile:
+            self.config.write(configfile)
+
+    def saveConfig(self):
+        monstring = ''
+        for each in self.monitorVars:
+            monstring = monstring + each.get()
+        self.config.set("Config", "monitors", monstring)
+        with open(os.path.join(self.baseDir, 'slideshow.ini'), 'wb') as \
+                configfile:
             self.config.write(configfile)
 
     def startShow(self):
+        self.saveConfig()
+        self.readConfig()
         self.offsetCount = 0
         self.displaysUsed = list()
         self.displayId = 0
@@ -329,6 +343,40 @@ class ssRoot(tk.Tk):
         if self.offsetPref is False:
             self.startingOffset = 0
 
+    def monButton(self, count, monitor):
+        toggleVar = tk.StringVar()
+        monButt = ttk.Checkbutton(self.monitorFrame, text="Monitor " + str(
+            count + 1), variable=toggleVar, onvalue=str(count + 1), offvalue=
+                                  '')
+        return toggleVar, monButt
+
+    def configGui(self):
+        topFrame = tk.Frame()
+        topFrame.pack()
+        title = ttk.Label(topFrame, text="DevilScreens Config")
+        title.pack()
+        self.monitorFrame = tk.Frame()
+        self.monitorFrame.pack()
+        self.monitorButtons = list()
+        self.monitorVars = list()
+        for count, monitor in enumerate(self.monitors):
+            var, button = self.monButton(count, monitor)
+            print self.displaysToUse
+            print str(count)
+            if count in self.displaysToUse:
+                button.invoke()
+            self.monitorVars.append(var)
+            self.monitorButtons.append(button)
+        for button in self.monitorButtons:
+            button.pack()
+        bottomFrame = tk.Frame()
+        bottomFrame.pack()
+        startButton = ttk.Button(bottomFrame, text="Start Show",
+                                 command=self.startShow)
+        startButton.pack(side=tk.LEFT)
+        quitButton = ttk.Button(bottomFrame, text="Quit", command=
+        self.destroy)
+        quitButton.pack(side=tk.RIGHT)
 
 class slideShowWindow(tk.Toplevel):
     def __init__(self, parent, monitor, imagelist, interval, offset, theme,
@@ -437,7 +485,7 @@ log.addHandler(handler)
 log.info('DevilScreens started at ' + time.strftime("%c"))
 
 root = ssRoot(None)
-root.withdraw()
+#root.withdraw()
 
 root.mainloop()
 
