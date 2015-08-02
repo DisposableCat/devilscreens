@@ -236,7 +236,6 @@ class ssRoot(tk.Tk):
         log.info("Folder = " + self.folder)
         log.info("Interval = " + str(self.interval))
         self.initDisplays()
-        self.setupShuffledList()
         self.configGui()
         # self.startShow()
 
@@ -292,7 +291,9 @@ class ssRoot(tk.Tk):
     def saveConfig(self):
         monstring = ''
         for each in self.monitorVars:
-            monstring = monstring + each.get()
+            if each.get() is not '':
+                monstring = monstring + each.get() + ','
+        monstring = monstring[:-1]
         self.config.set("Config", "monitors", monstring)
         with open(os.path.join(self.baseDir, 'slideshow.ini'), 'wb') as \
                 configfile:
@@ -301,6 +302,7 @@ class ssRoot(tk.Tk):
     def startShow(self):
         self.saveConfig()
         self.readConfig()
+        self.setupShuffledList()
         self.offsetCount = 0
         self.displaysUsed = list()
         self.displayId = 0
@@ -312,6 +314,7 @@ class ssRoot(tk.Tk):
                                                      self.colors[count],
                                                      self.backgrounds[count]))
             self.displayId += 1
+        self.withdraw()
 
     def setupShuffledList(self):
         pImgList = list()
