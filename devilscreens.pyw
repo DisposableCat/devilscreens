@@ -371,7 +371,7 @@ class ssRoot(tk.Tk):
             self.monitorVars.append(var)
             self.monitorButtons.append(button)
         for button in self.monitorButtons:
-            button.pack()
+            button.pack(side=tk.LEFT)
         bottomFrame = tk.Frame()
         bottomFrame.pack()
         startButton = ttk.Button(bottomFrame, text="Start Show",
