@@ -234,8 +234,8 @@ class monitorFrame:
                                             onvalue=str(count + 1), offvalue=
                                             '')
         self.label = ttk.Label(self.monitorFrame, text=str(self.monitor.w)
-                                                       + "x" +
-                                                       str(self.monitor.h))
+                                                       + "x" + str(
+            self.monitor.h))
         self.toggleButton.pack(fill=tk.BOTH, expand=1)
         self.label.pack(fill=tk.BOTH, expand=1)
 
