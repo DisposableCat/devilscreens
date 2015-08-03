@@ -365,11 +365,13 @@ class ssRoot(tk.Tk):
             self.startingOffset = 0
 
     def configGui(self):
-        topFrame = tk.Frame()
+        self.rootFrame = tk.Frame()
+        self.rootFrame.pack(fill=tk.BOTH)
+        topFrame = tk.Frame(self.rootFrame)
         topFrame.pack(fill=tk.BOTH)
         title = ttk.Label(topFrame, text="DevilScreens Config")
         title.pack()
-        self.mlistFrame = tk.Frame()
+        self.mlistFrame = tk.Frame(self.rootFrame)
         testlabel = tk.Label(self.mlistFrame, text="what")
         testlabel.pack(fill=tk.BOTH)
         self.monitorButtons = list()
@@ -380,8 +382,8 @@ class ssRoot(tk.Tk):
                                                     monitor))
         for frame in self.monitorButtons:
             self.monitorVars.append(frame.toggleVar)
-        bottomFrame = tk.Frame()
-        bottomFrame.pack(fill=tk.BOTH)
+        bottomFrame = tk.Frame(self.rootFrame)
+        bottomFrame.pack(side=tk.BOTTOM, fill=tk.BOTH)
         startButton = ttk.Button(bottomFrame, text="Start Show",
                                  command=self.startShow)
         startButton.pack(side=tk.LEFT, fill=tk.BOTH)
