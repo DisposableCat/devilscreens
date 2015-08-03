@@ -221,6 +221,24 @@ class fancyButton:
         self.altIcon = self.makeIcon(secondbutton)
 
 
+class monitorFrame:
+    def __init__(self, parent, count, monitor):
+        self.parent = parent
+        self.monitorFrame = tk.Frame(self.parent)
+        self.toggleVar = tk.StringVar()
+        self.monitor = monitor
+        self.monitorFrame.pack(side=tk.LEFT)
+        self.toggleButton = ttk.Checkbutton(self.monitorFrame,
+                                            text="Monitor " + str(count + 1),
+                                            variable=self.toggleVar,
+                                            onvalue=str(count + 1), offvalue=
+                                            '')
+        self.label = ttk.Label(self.monitorFrame, text=str(self.monitor.w)
+                                                       + "x" +
+                                                       str(self.monitor.h))
+        self.toggleButton.pack()
+        self.label.pack()
+
 class ssRoot(tk.Tk):
     def __init__(self, parent):
         tk.Tk.__init__(self, parent)
@@ -346,40 +364,31 @@ class ssRoot(tk.Tk):
         if self.offsetPref is False:
             self.startingOffset = 0
 
-    def monButton(self, count, monitor):
-        toggleVar = tk.StringVar()
-        monButt = ttk.Checkbutton(self.monitorFrame, text="Monitor " + str(
-            count + 1), variable=toggleVar, onvalue=str(count + 1), offvalue=
-                                  '')
-        return toggleVar, monButt
-
     def configGui(self):
         topFrame = tk.Frame()
-        topFrame.pack()
+        topFrame.pack(fill=tk.BOTH)
         title = ttk.Label(topFrame, text="DevilScreens Config")
         title.pack()
-        self.monitorFrame = tk.Frame()
-        self.monitorFrame.pack()
+        self.mlistFrame = tk.Frame()
+        testlabel = tk.Label(self.mlistFrame, text="what")
+        testlabel.pack(fill=tk.BOTH)
         self.monitorButtons = list()
         self.monitorVars = list()
+        self.mlistFrame.pack(side=tk.TOP, fill=tk.BOTH)
         for count, monitor in enumerate(self.monitors):
-            var, button = self.monButton(count, monitor)
-            print self.displaysToUse
-            print str(count)
-            if count in self.displaysToUse:
-                button.invoke()
-            self.monitorVars.append(var)
-            self.monitorButtons.append(button)
-        for button in self.monitorButtons:
-            button.pack(side=tk.LEFT)
+            self.monitorButtons.append(monitorFrame(self.mlistFrame, count,
+                                                    monitor))
+        for frame in self.monitorButtons:
+            self.monitorVars.append(frame.toggleVar)
         bottomFrame = tk.Frame()
-        bottomFrame.pack()
+        bottomFrame.pack(fill=tk.BOTH)
         startButton = ttk.Button(bottomFrame, text="Start Show",
                                  command=self.startShow)
-        startButton.pack(side=tk.LEFT)
+        startButton.pack(side=tk.LEFT, fill=tk.BOTH)
         quitButton = ttk.Button(bottomFrame, text="Quit", command=
         self.destroy)
-        quitButton.pack(side=tk.RIGHT)
+        quitButton.pack(side=tk.RIGHT, fill=tk.BOTH)
+
 
 class slideShowWindow(tk.Toplevel):
     def __init__(self, parent, monitor, imagelist, interval, offset, theme,
@@ -488,7 +497,7 @@ log.addHandler(handler)
 log.info('DevilScreens started at ' + time.strftime("%c"))
 
 root = ssRoot(None)
-#root.withdraw()
+# root.withdraw()
 
 root.mainloop()
 
