@@ -227,7 +227,7 @@ class monitorFrame:
         self.monitorFrame = tk.Frame(self.parent)
         self.toggleVar = tk.StringVar()
         self.monitor = monitor
-        self.monitorFrame.pack(side=tk.LEFT)
+        self.monitorFrame.pack()
         self.toggleButton = ttk.Checkbutton(self.monitorFrame,
                                             text="Monitor " + str(count + 1),
                                             variable=self.toggleVar,
@@ -236,8 +236,8 @@ class monitorFrame:
         self.label = ttk.Label(self.monitorFrame, text=str(self.monitor.w)
                                                        + "x" +
                                                        str(self.monitor.h))
-        self.toggleButton.pack()
-        self.label.pack()
+        self.toggleButton.pack(fill=tk.BOTH, expand=1)
+        self.label.pack(fill=tk.BOTH, expand=1)
 
 class ssRoot(tk.Tk):
     def __init__(self, parent):
@@ -386,10 +386,10 @@ class ssRoot(tk.Tk):
         bottomFrame.pack(side=tk.BOTTOM, fill=tk.BOTH)
         startButton = ttk.Button(bottomFrame, text="Start Show",
                                  command=self.startShow)
-        startButton.pack(side=tk.LEFT, fill=tk.BOTH)
+        startButton.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
         quitButton = ttk.Button(bottomFrame, text="Quit", command=
         self.destroy)
-        quitButton.pack(side=tk.RIGHT, fill=tk.BOTH)
+        quitButton.pack(side=tk.RIGHT, fill=tk.BOTH, expand=1)
 
 
 class slideShowWindow(tk.Toplevel):
