@@ -227,16 +227,83 @@ class monitorFrame:
         self.monitorFrame = tk.Frame(self.parent)
         self.toggleVar = tk.StringVar()
         self.monitor = monitor
-        self.monitorFrame.pack(side=tk.LEFT,fill=tk.BOTH, expand=1)
+        self.monitorFrame.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
         self.toggleButton = ttk.Checkbutton(self.monitorFrame,
                                             text="Monitor " + str(count + 1),
                                             variable=self.toggleVar,
                                             onvalue=str(count + 1),
                                             offvalue='')
         self.label = ttk.Label(self.monitorFrame, text="{0}x{1}".format(
-            str(self.monitor.w), str(self.monitor.h)),justify=tk.CENTER)
+            str(self.monitor.w), str(self.monitor.h)), justify=tk.CENTER)
         self.toggleButton.pack()
         self.label.pack()
+
+
+class configFrame:
+    def __init__(self, parent):
+        self.parent = parent
+        self.rootFrame = tk.Frame()
+        self.rootFrame.pack(fill=tk.X, expand=1)
+        self.makeTopFrame()
+        self.makeMonitorFrame()
+        self.makeBottomFrame()
+
+    def makeTopFrame(self):
+        self.topFrame = tk.Frame(self.rootFrame)
+        self.topFrame.pack()
+        title = ttk.Label(self.topFrame, text="DevilScreens Config")
+        title.pack()
+        self.makeIntervalEntry()
+
+    def makeIntervalEntry(self):
+        self.vinterval = tk.StringVar()
+        self.vinterval.set(str(self.parent.interval // 1000))
+        self.validateInt = self.rootFrame.register(self.vint)
+        intervalLabel = ttk.Label(self.topFrame, text="Image cycle time (s):")
+        intervalLabel.pack(side=tk.LEFT, fill=tk.X, expand=1)
+        intervalButton = ttk.Entry(self.topFrame,
+                                   validate='all',
+                                   validatecommand=(self.validateInt, '%P',
+                                                    '%s'),
+                                   textvariable=self.vinterval,
+                                   justify=tk.CENTER, width=5)
+        intervalButton.pack(side=tk.LEFT)
+
+    def makeMonitorFrame(self):
+        self.mlistFrame = tk.Frame(self.rootFrame)
+        self.monitorButtons = list()
+        self.monitorVars = list()
+        self.mlistFrame.pack(side=tk.TOP, fill=tk.BOTH)
+        for count, monitor in enumerate(self.parent.monitors):
+            self.monitorButtons.append(monitorFrame(self.mlistFrame, count,
+                                                    monitor))
+        for count, frame in enumerate(self.monitorButtons):
+            self.monitorVars.append(frame.toggleVar)
+            if count in self.parent.displaysToUse:
+                frame.toggleButton.invoke()
+
+    def makeBottomFrame(self):
+        self.bottomFrame = tk.Frame(self.rootFrame)
+        self.bottomFrame.pack(side=tk.BOTTOM, fill=tk.BOTH)
+        self.makeStartQuit()
+
+    def makeStartQuit(self):
+        startButton = ttk.Button(self.bottomFrame, text="Start Show",
+                                 command=self.parent.startShow)
+        startButton.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
+        quitButton = ttk.Button(self.bottomFrame, text="Quit", command=
+        self.parent.destroy)
+        quitButton.pack(side=tk.RIGHT, fill=tk.BOTH, expand=1)
+
+    def vint(self, what, prev):
+        if not what:
+            return True
+        truth = what.isdigit()
+        if truth is False:
+            self.prevInterval = prev
+            return False
+        if truth is True:
+            return True
 
 
 class ssRoot(tk.Tk):
@@ -367,54 +434,8 @@ class ssRoot(tk.Tk):
         if self.offsetPref is False:
             self.startingOffset = 0
 
-    def vint(self, what, prev):
-        if not what:
-            return True
-        truth = what.isdigit()
-        if truth is False:
-            self.prevInterval = prev
-            return False
-        if truth is True:
-            return True
-
     def configGui(self):
-        self.rootFrame = tk.Frame()
-        self.rootFrame.pack(fill=tk.X,expand=1)
-        topFrame = tk.Frame(self.rootFrame)
-        topFrame.pack()
-        title = ttk.Label(topFrame, text="DevilScreens Config")
-        title.pack()
-        self.vinterval = tk.StringVar()
-        self.vinterval.set(str(self.interval // 1000))
-        self.validateInt = self.register(self.vint)
-        intervalLabel = ttk.Label(topFrame,text="Image cycle time (s):")
-        intervalLabel.pack(side=tk.LEFT, fill=tk.X, expand=1)
-        intervalButton = ttk.Entry(topFrame,
-                                   validate='all',
-                                   validatecommand=(self.validateInt, '%P',
-                                                    '%s'),
-                                   textvariable=self.vinterval,
-                                   justify = tk.CENTER, width=5)
-        intervalButton.pack(side=tk.LEFT)
-        self.mlistFrame = tk.Frame(self.rootFrame)
-        self.monitorButtons = list()
-        self.monitorVars = list()
-        self.mlistFrame.pack(side=tk.TOP, fill=tk.BOTH)
-        for count, monitor in enumerate(self.monitors):
-            self.monitorButtons.append(monitorFrame(self.mlistFrame, count,
-                                                    monitor))
-        for count, frame in enumerate(self.monitorButtons):
-            self.monitorVars.append(frame.toggleVar)
-            if count in self.displaysToUse:
-                frame.toggleButton.invoke()
-        bottomFrame = tk.Frame(self.rootFrame)
-        bottomFrame.pack(side=tk.BOTTOM, fill=tk.BOTH)
-        startButton = ttk.Button(bottomFrame, text="Start Show",
-                                 command=self.startShow)
-        startButton.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
-        quitButton = ttk.Button(bottomFrame, text="Quit", command=
-        self.destroy)
-        quitButton.pack(side=tk.RIGHT, fill=tk.BOTH, expand=1)
+        self.rootFrame = configFrame(self)
 
 
 class slideShowWindow(tk.Toplevel):
