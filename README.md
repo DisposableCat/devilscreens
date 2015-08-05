@@ -29,17 +29,32 @@ Screenshot
 
 Usage
 ------------
-Right now the app works off an INI file, which will be generated with sensible defaults the first time you run it. I'm going to code a config GUI one of these days. The options in the INI are as follows:
 
-- Interval: this is the interval, in seconds, between slides.
-- Offset: Choose whether or not you want the refresh timers offset or not. When this is "yes", which is the default, the app will delay any monitors after the first by an amount of time such that all monitors refresh an equal amount of seconds apart from each other (so, for interval = 15 and 3 monitors, it would go update 1, wait 5, update 2, wait 5, update 3, wait 5, update 1, and so on).
- - If this is "no", update is synchronized across all monitors.
-- Folder: This is the folder you want to display. All files ending in JPG/PNG/JPEG/GIF in this folder will be shuffled and divided into N groups, where N is the number of monitors you're using. Animated GIFs do not work (yet?)
+The app has a rudimentary configuration GUI, which is a work in progress. 
+This window will be displayed upon startup. Options available via the GUI 
+are as follows:
+
+- Folder: This is the folder DevilScreens is currently set to display. All 
+files ending in JPG/PNG/JPEG/GIF in this folder will be shuffled and divided into N groups, where N is the number of monitors you're using. Animated GIFs do not work (yet?) The "..." button brings up the folder picker.
  - The default is the folder that devilscreens.pyw is in. I should probably fix that but I am not sure how to do so in a platform-agnostic fashion.
+- Image cycle time: this is the interval, in seconds, between slides.
+- Offset timers?: Choose whether or not you want the refresh timers offset or not. When this is "yes", which is the default, the app will delay any monitors after the first by an amount of time such that all monitors refresh an equal amount of seconds apart from each other (so, for interval = 15 and 3 monitors, it would go update 1, wait 5, update 2, wait 5, update 3, wait 5, update 1, and so on).
+ - If this is "no", update is synchronized across all monitors.
+- Monitors: All detected monitors are shown with their resolution, displayed
+ in order of X coordinate on the overall system canvas (so, they should 
+ appear in the GUI in the same order they appear in physical space). Each 
+ monitor has a checkbox which indicates whether or not DevilScreens will use
+  it.
+- Start Show: Self-explanatory; this starts the show.
+- Quit: Also self-explanatory.
+  
+There are several other options available via slideshow.ini, which also 
+saves the options you set in the GUI. Eventually these will all appear in 
+the GUI as well. The additional options in the INI are currently as follows:
+
 - Background color: The color to use for the background of the image windows
  and text labels.
 - Text color: The color to use for label text. Should not be the same as above.
-- Monitors: Which monitors to display on. This should be in the form ```1,2,3``` et cetera. For now there is no way other than trial and error to determine which monitor is which, but I'll fix this when I add the GUI.
 - Themes: A comma-separated list of the themes you want to use. There are 
 currently two themes included. Themes represent button shapes and the 
 appropriate Photoshop layer effects to make them look good. They are 
