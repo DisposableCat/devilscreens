@@ -4,6 +4,8 @@ import os
 
 
 def iconAssembler(basedir, button, template, colors, background):
+    background = background.strip()
+    template = template.strip()
     backDir = os.path.join(basedir, "themes", "backgrounds", '')
     themeDir = os.path.join(basedir, "themes")
     back = Image.open(os.path.join(backDir + str(background + ".png")))
@@ -14,6 +16,7 @@ def iconAssembler(basedir, button, template, colors, background):
     back.putalpha(mask)
     layers = list()
     for count, color in enumerate(colors):
+        color.strip()
         filename = ''
         try:
             filename = os.path.join(themeDir, template, str(button + str(
