@@ -38,6 +38,15 @@ def handleExceptions():
     traceback.print_exception = custom_print_exception
 
 
+handleExceptions()
+logfilename = 'system.log'
+log = logging.getLogger()
+logging.basicConfig(filename=logfilename, level=logging.DEBUG)
+handler = logging.StreamHandler(stream=sys.stdout)
+log.addHandler(handler)
+log.info('DevilScreens started at ' + time.strftime("%c"))
+
+
 def silenceErr():
     def write(self, s):
         pass
@@ -253,21 +262,29 @@ class configFrame:
         self.topFrame.pack()
         title = ttk.Label(self.topFrame, text="DevilScreens Config")
         title.pack()
-        self.makeIntervalEntry()
+        self.makeIntervalEntry(self.topFrame)
+        self.makeOffsetToggle(self.topFrame)
 
-    def makeIntervalEntry(self):
+    def makeIntervalEntry(self, frame):
         self.vinterval = tk.StringVar()
         self.vinterval.set(str(self.parent.interval // 1000))
-        self.validateInt = self.rootFrame.register(self.vint)
-        intervalLabel = ttk.Label(self.topFrame, text="Image cycle time (s):")
-        intervalLabel.pack(side=tk.LEFT, fill=tk.X, expand=1)
-        intervalButton = ttk.Entry(self.topFrame,
-                                   validate='all',
+        self.validateInt = frame.register(self.vint)
+        intervalLabel = ttk.Label(frame, text="Image cycle time (s):")
+        intervalLabel.pack(side=tk.LEFT, fill=tk.X, expand=1, padx=5)
+        intervalButton = ttk.Entry(frame, validate='all',
                                    validatecommand=(self.validateInt, '%P',
                                                     '%s'),
                                    textvariable=self.vinterval,
                                    justify=tk.CENTER, width=5)
         intervalButton.pack(side=tk.LEFT)
+
+    def makeOffsetToggle(self, frame):
+        self.offsetBool = tk.BooleanVar()
+        self.offsetBool.set(self.parent.offsetPref)
+        self.offsetToggle = ttk.Checkbutton(frame, text="Offset timers?",
+                                            variable=self.offsetBool,
+                                            onvalue=True, offvalue=False)
+        self.offsetToggle.pack(padx=5)
 
     def makeMonitorFrame(self):
         self.mlistFrame = tk.Frame(self.rootFrame)
@@ -285,13 +302,13 @@ class configFrame:
     def makeBottomFrame(self):
         self.bottomFrame = tk.Frame(self.rootFrame)
         self.bottomFrame.pack(side=tk.BOTTOM, fill=tk.BOTH)
-        self.makeStartQuit()
+        self.makeStartQuit(self.bottomFrame)
 
-    def makeStartQuit(self):
-        startButton = ttk.Button(self.bottomFrame, text="Start Show",
+    def makeStartQuit(self, frame):
+        startButton = ttk.Button(frame, text="Start Show",
                                  command=self.parent.startShow)
         startButton.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
-        quitButton = ttk.Button(self.bottomFrame, text="Quit", command=
+        quitButton = ttk.Button(frame, text="Quit", command=
         self.parent.destroy)
         quitButton.pack(side=tk.RIGHT, fill=tk.BOTH, expand=1)
 
@@ -375,14 +392,15 @@ class ssRoot(tk.Tk):
 
     def saveConfig(self):
         monstring = ''
-        for each in self.monitorVars:
+        for each in self.confGUI.monitorVars:
             if each.get() is not '':
                 monstring = monstring + each.get() + ','
         monstring = monstring[:-1]
         if monstring == '':
             monstring = '1'
         self.config.set("Config", "monitors", monstring)
-        self.config.set("Config", "interval", self.vinterval.get())
+        self.config.set("Config", "interval", self.confGUI.vinterval.get())
+        self.config.set("Config", "offset", self.confGUI.offsetBool.get())
         with open(os.path.join(self.baseDir, 'slideshow.ini'), 'wb') as \
                 configfile:
             self.config.write(configfile)
@@ -390,6 +408,7 @@ class ssRoot(tk.Tk):
     def startShow(self):
         self.saveConfig()
         self.readConfig()
+        self.setOffset()
         self.setupShuffledList()
         self.offsetCount = 0
         self.displaysUsed = list()
@@ -430,12 +449,14 @@ class ssRoot(tk.Tk):
         self.monitors = list()
         for each in monlist:
             self.monitors.append(usableScreen(each))
+
+    def setOffset(self):
         self.startingOffset = self.interval / len(self.displaysToUse)
         if self.offsetPref is False:
             self.startingOffset = 0
 
     def configGui(self):
-        self.rootFrame = configFrame(self)
+        self.confGUI = configFrame(self)
 
 
 class slideShowWindow(tk.Toplevel):
@@ -535,14 +556,6 @@ class slideShowWindow(tk.Toplevel):
     def shareImage(self):
         os.startfile(self.il.actImg.ordFName)
 
-
-handleExceptions()
-logfilename = 'system.log'
-log = logging.getLogger()
-logging.basicConfig(filename=logfilename, level=logging.DEBUG)
-handler = logging.StreamHandler(stream=sys.stdout)
-log.addHandler(handler)
-log.info('DevilScreens started at ' + time.strftime("%c"))
 
 root = ssRoot(None)
 # root.withdraw()
