@@ -231,13 +231,13 @@ class monitorFrame:
         self.toggleButton = ttk.Checkbutton(self.monitorFrame,
                                             text="Monitor " + str(count + 1),
                                             variable=self.toggleVar,
-                                            onvalue=str(count + 1), offvalue=
-                                            '')
-        self.label = ttk.Label(self.monitorFrame, text=str(self.monitor.w)
-                                                       + "x" + str(
-            self.monitor.h))
+                                            onvalue=str(count + 1),
+                                            offvalue='')
+        self.label = ttk.Label(self.monitorFrame, text="{0}x{1}".format(
+            str(self.monitor.w), str(self.monitor.h)))
         self.toggleButton.pack(fill=tk.BOTH, expand=1)
         self.label.pack(fill=tk.BOTH, expand=1)
+
 
 class ssRoot(tk.Tk):
     def __init__(self, parent):
@@ -327,7 +327,8 @@ class ssRoot(tk.Tk):
         for count, each in enumerate(self.displaysToUse):
             offset = int(self.startingOffset * self.displayId)
             self.displaysUsed.append(slideShowWindow(self, self.monitors[
-                each], self.imageListArray[count], self.interval, offset,
+                each], self.imageListArray[count], self.interval,
+                                                     offset,
                                                      self.themes[count],
                                                      self.colors[count],
                                                      self.backgrounds[count]))
@@ -364,6 +365,9 @@ class ssRoot(tk.Tk):
         if self.offsetPref is False:
             self.startingOffset = 0
 
+    def vint(self):
+        
+
     def configGui(self):
         self.rootFrame = tk.Frame()
         self.rootFrame.pack(fill=tk.BOTH)
@@ -371,9 +375,14 @@ class ssRoot(tk.Tk):
         topFrame.pack(fill=tk.BOTH)
         title = ttk.Label(topFrame, text="DevilScreens Config")
         title.pack()
+        self.vinterval = tk.StringVar()
+        self.vinterval.set(str(self.interval // 1000))
+        intervalButton = ttk.Entry(topFrame,
+                                   validate='focusout',
+                                   validatecommand=vint,
+                                   textvariable=self.vinterval)
+        intervalButton.pack()
         self.mlistFrame = tk.Frame(self.rootFrame)
-        testlabel = tk.Label(self.mlistFrame, text="what")
-        testlabel.pack(fill=tk.BOTH)
         self.monitorButtons = list()
         self.monitorVars = list()
         self.mlistFrame.pack(side=tk.TOP, fill=tk.BOTH)
