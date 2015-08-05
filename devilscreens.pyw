@@ -330,8 +330,7 @@ class ssRoot(tk.Tk):
         for count, each in enumerate(self.displaysToUse):
             offset = int(self.startingOffset * self.displayId)
             self.displaysUsed.append(slideShowWindow(self, self.monitors[
-                each], self.imageListArray[count], self.interval,
-                                                     offset,
+                each], self.imageListArray[count], self.interval, offset,
                                                      self.themes[count],
                                                      self.colors[count],
                                                      self.backgrounds[count]))
