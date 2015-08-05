@@ -2,6 +2,7 @@
 """devilscreens.pyw: a configurable multimonitor slideshow"""
 from __future__ import division
 import Tkinter as tk
+import tkFileDialog
 import ttk
 import os
 from random import shuffle
@@ -254,6 +255,7 @@ class configFrame:
         self.rootFrame = tk.Frame()
         self.rootFrame.pack(fill=tk.X, expand=1)
         self.makeTopFrame()
+        self.makeIntervalFrame()
         self.makeMonitorFrame()
         self.makeBottomFrame()
 
@@ -262,8 +264,28 @@ class configFrame:
         self.topFrame.pack()
         title = ttk.Label(self.topFrame, text="DevilScreens Config")
         title.pack()
-        self.makeIntervalEntry(self.topFrame)
-        self.makeOffsetToggle(self.topFrame)
+        self.folderVar = tk.StringVar()
+        self.folderVar.set(self.parent.folder)
+        folderLabel = ttk.Label(self.topFrame, text="Folder:")
+        folderLabel.pack(side=tk.LEFT, padx=2)
+        folder = ttk.Label(self.topFrame, textvariable=self.folderVar)
+        folder.pack(side=tk.LEFT)
+        browseButton = ttk.Button(self.topFrame, command=self.selectFolder,
+                                  text='...', width=3)
+        browseButton.pack(padx=2)
+
+    def selectFolder(self):
+        folder = tkFileDialog.askdirectory(initialdir=self.folderVar.get(),
+                                           mustexist=True,
+                                           parent=root)
+        if folder:
+            self.folderVar.set(folder)
+
+    def makeIntervalFrame(self):
+        self.intervalFrame = tk.Frame(self.rootFrame)
+        self.intervalFrame.pack()
+        self.makeIntervalEntry(self.intervalFrame)
+        self.makeOffsetToggle(self.intervalFrame)
 
     def makeIntervalEntry(self, frame):
         self.vinterval = tk.StringVar()
@@ -401,6 +423,7 @@ class ssRoot(tk.Tk):
         self.config.set("Config", "monitors", monstring)
         self.config.set("Config", "interval", self.confGUI.vinterval.get())
         self.config.set("Config", "offset", self.confGUI.offsetBool.get())
+        self.config.set("Config", "folder", self.confGUI.folderVar.get())
         with open(os.path.join(self.baseDir, 'slideshow.ini'), 'wb') as \
                 configfile:
             self.config.write(configfile)
@@ -449,7 +472,7 @@ class ssRoot(tk.Tk):
         self.monitors = list()
         for each in monlist:
             self.monitors.append(usableScreen(each))
-        self.monitors.sort(key=operator.attrgetter('x'))
+        self.monitors.sort(key=operator.attrgetter('x', 'y'))
 
     def setOffset(self):
         self.startingOffset = self.interval / len(self.displaysToUse)
