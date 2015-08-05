@@ -312,6 +312,8 @@ class ssRoot(tk.Tk):
             if each.get() is not '':
                 monstring = monstring + each.get() + ','
         monstring = monstring[:-1]
+        if monstring == '':
+            monstring = '1'
         self.config.set("Config", "monitors", monstring)
         with open(os.path.join(self.baseDir, 'slideshow.ini'), 'wb') as \
                 configfile:
@@ -365,8 +367,15 @@ class ssRoot(tk.Tk):
         if self.offsetPref is False:
             self.startingOffset = 0
 
-    def vint(self):
-        
+    def vint(self, what, prev):
+        if not what:
+            return True
+        truth = what.isdigit()
+        if truth is False:
+            self.prevInterval = prev
+            return False
+        if truth is True:
+            return True
 
     def configGui(self):
         self.rootFrame = tk.Frame()
@@ -377,9 +386,11 @@ class ssRoot(tk.Tk):
         title.pack()
         self.vinterval = tk.StringVar()
         self.vinterval.set(str(self.interval // 1000))
+        self.validateInt = self.register(self.vint)
         intervalButton = ttk.Entry(topFrame,
-                                   validate='focusout',
-                                   validatecommand=vint,
+                                   validate='all',
+                                   validatecommand=(self.validateInt, '%P',
+                                                    '%s'),
                                    textvariable=self.vinterval)
         intervalButton.pack()
         self.mlistFrame = tk.Frame(self.rootFrame)
@@ -389,8 +400,10 @@ class ssRoot(tk.Tk):
         for count, monitor in enumerate(self.monitors):
             self.monitorButtons.append(monitorFrame(self.mlistFrame, count,
                                                     monitor))
-        for frame in self.monitorButtons:
+        for count, frame in enumerate(self.monitorButtons):
             self.monitorVars.append(frame.toggleVar)
+            if count in self.displaysToUse:
+                frame.toggleButton.invoke()
         bottomFrame = tk.Frame(self.rootFrame)
         bottomFrame.pack(side=tk.BOTTOM, fill=tk.BOTH)
         startButton = ttk.Button(bottomFrame, text="Start Show",
