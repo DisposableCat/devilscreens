@@ -12,6 +12,7 @@ import collections
 import time
 import sys
 import traceback
+import operator
 
 from PIL import Image
 from PIL import ImageTk
@@ -60,11 +61,11 @@ class usableScreen:
         self.w = Screen.width
         self.h = Screen.height
         if self.x < 0:
-            self.setPos(rmargin, "left", '+')
+            self.setPos(rmargin, '+')
         if self.x > 0:
-            self.setPos(lmargin, "right", '')
+            self.setPos(lmargin, '')
         if self.x == 0:
-            self.setPos(0.5, "center", '')
+            self.setPos(0.5, '')
         self.dimensions = (self.w, self.h, self.gSign, self.x, self.y,)
         self.pw = self.w / 2
         self.ph = self.h / 2
@@ -73,9 +74,8 @@ class usableScreen:
         self.l = int(self.w * lmargin)
         self.r = int(self.w * rmargin)
 
-    def setPos(self, percent, pos, string):
+    def setPos(self, percent, string):
         self.cPos = int(self.w * percent)
-        self.layoutPos = pos
         self.gSign = string
 
 
@@ -305,11 +305,11 @@ class configFrame:
         self.makeStartQuit(self.bottomFrame)
 
     def makeStartQuit(self, frame):
-        startButton = ttk.Button(frame, text="Start Show",
-                                 command=self.parent.startShow)
+        startButton = ttk.Button(
+            frame, text="Start Show", command=self.parent.startShow)
         startButton.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
-        quitButton = ttk.Button(frame, text="Quit", command=
-        self.parent.destroy)
+        quitButton = ttk.Button(
+            frame, text="Quit", command=self.parent.destroy)
         quitButton.pack(side=tk.RIGHT, fill=tk.BOTH, expand=1)
 
     def vint(self, what, prev):
@@ -449,6 +449,7 @@ class ssRoot(tk.Tk):
         self.monitors = list()
         for each in monlist:
             self.monitors.append(usableScreen(each))
+        self.monitors.sort(key=operator.attrgetter('x'))
 
     def setOffset(self):
         self.startingOffset = self.interval / len(self.displaysToUse)
