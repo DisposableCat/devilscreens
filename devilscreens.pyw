@@ -3,6 +3,7 @@
 from __future__ import division
 import Tkinter as tk
 import tkFileDialog
+import tkColorChooser
 import ttk
 import os
 from random import shuffle
@@ -234,10 +235,9 @@ class fancyButton:
 class monitorFrame:
     def __init__(self, parent, count, monitor):
         self.parent = parent
-        self.monitorFrame = tk.Frame(self.parent)
-        self.toggleVar = tk.StringVar()
         self.monitor = monitor
-        self.monitorFrame.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
+        self.monitorFrame = tk.Frame(self.parent, bd=1, relief=tk.RAISED, )
+        self.toggleVar = tk.StringVar()
         self.toggleButton = ttk.Checkbutton(self.monitorFrame,
                                             text="Monitor " + str(count + 1),
                                             variable=self.toggleVar,
@@ -247,6 +247,13 @@ class monitorFrame:
             str(self.monitor.w), str(self.monitor.h)), justify=tk.CENTER)
         self.toggleButton.pack()
         self.label.pack()
+        self.x, self.y = self.monitor.x / 10 + int(self.parent.cget(
+            "width")) / 2, \
+                         self.monitor.y / 10
+        self.parent.create_window(self.x, self.y, anchor=tk.NE,
+                                  window=self.monitorFrame, width=
+                                  self.monitor.w / 10, height=
+                                  self.monitor.h / 10)
 
 
 class configFrame:
@@ -268,7 +275,8 @@ class configFrame:
         self.folderVar.set(self.parent.folder)
         folderLabel = ttk.Label(self.topFrame, text="Folder:")
         folderLabel.pack(side=tk.LEFT, padx=2)
-        folder = ttk.Label(self.topFrame, textvariable=self.folderVar)
+        folder = tk.Label(self.topFrame, textvariable=self.folderVar, bd=2,
+                          relief=tk.SUNKEN)
         folder.pack(side=tk.LEFT)
         browseButton = ttk.Button(self.topFrame, command=self.selectFolder,
                                   text='...', width=3)
@@ -280,6 +288,10 @@ class configFrame:
                                            parent=root)
         if folder:
             self.folderVar.set(folder)
+
+    def makeColorFrame(self):
+        self.colorFrame = tk.Frame(self.rootFrame)
+        self.colorFrame.pack()
 
     def makeIntervalFrame(self):
         self.intervalFrame = tk.Frame(self.rootFrame)
@@ -309,7 +321,7 @@ class configFrame:
         self.offsetToggle.pack(padx=5)
 
     def makeMonitorFrame(self):
-        self.mlistFrame = tk.Frame(self.rootFrame)
+        self.mlistFrame = tk.Canvas(self.rootFrame, width=500, height=200)
         self.monitorButtons = list()
         self.monitorVars = list()
         self.mlistFrame.pack(side=tk.TOP, fill=tk.BOTH)
