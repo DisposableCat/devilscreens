@@ -76,9 +76,20 @@ class usableScreen:
         self.l = int(self.w * lmargin)
         self.r = int(self.w * rmargin)
 
+    def correctCoords(self, minx, miny):
+        self.cx = self.x + abs(minx)
+        self.cy = self.y + abs(miny)
+
     def setPos(self, percent, string):
         self.cPos = int(self.w * percent)
         self.gSign = string
+
+    def getConfCoords(self, canvasDim, origDim):
+        ratio = origDim / canvasDim
+        self.cx = int(self.cx * ratio)
+        self.cy = int(self.cy * ratio)
+        self.cw = int(self.w * ratio)
+        self.ch = int(self.h * ratio)
 
 
 class imageList(object):
@@ -236,7 +247,7 @@ class monitorFrame:
     def __init__(self, parent, count, monitor):
         self.parent = parent
         self.monitor = monitor
-        self.monitorFrame = tk.Frame(self.parent, bd=1, relief=tk.RAISED, )
+        self.monitorFrame = tk.Frame(self.parent, bd=5, relief=tk.GROOVE)
         self.toggleVar = tk.StringVar()
         self.toggleButton = ttk.Checkbutton(self.monitorFrame,
                                             text="Monitor " + str(count + 1),
@@ -247,13 +258,11 @@ class monitorFrame:
             str(self.monitor.w), str(self.monitor.h)), justify=tk.CENTER)
         self.toggleButton.pack()
         self.label.pack()
-        self.x, self.y = self.monitor.x / 10 + int(self.parent.cget(
-            "width")) / 2, \
-                         self.monitor.y / 10
-        self.parent.create_window(self.x, self.y, anchor=tk.NE,
-                                  window=self.monitorFrame, width=
-                                  self.monitor.w / 10, height=
-                                  self.monitor.h / 10)
+        self.parent.create_window(self.monitor.cx, self.monitor.cy,
+                                  anchor=tk.NW,
+                                  window=self.monitorFrame,
+                                  width=self.monitor.cw,
+                                  height=self.monitor.ch)
 
 
 class configFrame:
@@ -321,13 +330,28 @@ class configFrame:
         self.offsetToggle.pack(padx=5)
 
     def makeMonitorFrame(self):
-        self.mlistFrame = tk.Canvas(self.rootFrame, width=500, height=200)
+        self.mlistFrame = tk.Canvas(self.rootFrame,
+                                    width=self.parent.totalw / 10,
+                                    height=self.parent.totalh / 10)
         self.monitorButtons = list()
         self.monitorVars = list()
-        self.mlistFrame.pack(side=tk.TOP, fill=tk.BOTH)
+        self.mlistFrame.pack(side=tk.TOP, padx=5)
         for count, monitor in enumerate(self.parent.monitors):
+            monitor.correctCoords(self.parent.minx, self.parent.miny)
+            monitor.getConfCoords(self.parent.totalw, int(self.mlistFrame.cget(
+                "width")))
             self.monitorButtons.append(monitorFrame(self.mlistFrame, count,
                                                     monitor))
+        totalw = sum(monitor.cw for monitor in self.parent.monitors)
+        totalh = sum(monitor.ch for monitor in self.parent.monitors)
+        maxx = max(monitor.cx for monitor in self.parent.monitors)
+        maxy = max(monitor.cy for monitor in self.parent.monitors)
+        maxw = max(monitor.cw for monitor in self.parent.monitors)
+        maxh = max(monitor.ch for monitor in self.parent.monitors)
+        if maxx > maxy:
+            self.mlistFrame.config(height=maxh)
+        if maxy > maxx:
+            self.mlistFrame.config(width=maxw)
         for count, frame in enumerate(self.monitorButtons):
             self.monitorVars.append(frame.toggleVar)
             if count in self.parent.displaysToUse:
@@ -335,7 +359,7 @@ class configFrame:
 
     def makeBottomFrame(self):
         self.bottomFrame = tk.Frame(self.rootFrame)
-        self.bottomFrame.pack(side=tk.BOTTOM, fill=tk.BOTH)
+        self.bottomFrame.pack(side=tk.BOTTOM, fill=tk.X)
         self.makeStartQuit(self.bottomFrame)
 
     def makeStartQuit(self, frame):
@@ -485,6 +509,10 @@ class ssRoot(tk.Tk):
         for each in monlist:
             self.monitors.append(usableScreen(each))
         self.monitors.sort(key=operator.attrgetter('x', 'y'))
+        self.totalw = sum(abs(monitor.w) for monitor in self.monitors)
+        self.totalh = sum(abs(monitor.h) for monitor in self.monitors)
+        self.minx = min(monitor.x for monitor in self.monitors)
+        self.miny = min(monitor.y for monitor in self.monitors)
 
     def setOffset(self):
         self.startingOffset = self.interval / len(self.displaysToUse)
