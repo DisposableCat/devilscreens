@@ -423,6 +423,7 @@ class ssRoot(tk.Tk):
     def __init__(self, parent):
         tk.Tk.__init__(self, parent)
         self.title("DevilScreens Config")
+        self.focus_force()
         self.childWindows = 0
         self.baseDir = os.getcwdu()
         self.totalImages = tk.IntVar()
@@ -583,6 +584,7 @@ class slideShowWindow(tk.Toplevel):
         self.artist.set(None)
         self.running = tk.BooleanVar()
         self.running.set(False)
+        self.focus_force()
         self.configure(background='black')
         self.overrideredirect(1)
         self.geometry("%dx%d%s%+d%+d" % self.m.dimensions)
