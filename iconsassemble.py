@@ -57,7 +57,7 @@ def iCanTellBySomeOfThePixels(icon, pic1, pic2, pic3):
 
 
 def replaceColors(icon, color):
-    rgb = list((cvHex(color[2:4]), cvHex(color[4:6]), cvHex(color[6:8])))
+    rgb = list((cvHex(color[1:3]), cvHex(color[3:5]), cvHex(color[5:7])))
     pix = icon.load()
     for y in xrange(icon.size[1]):
         for x in xrange(icon.size[0]):

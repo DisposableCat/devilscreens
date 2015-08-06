@@ -60,7 +60,7 @@ currently two themes included. Themes represent button shapes and the
 appropriate Photoshop layer effects to make them look good. They are 
 combined with colors and backgrounds to generate button graphics on the fly 
 in a highly customizable way.
-- Colors: The colors to use for your chosen themes, in ```0xrrggbb``` hex code 
+- Colors: The colors to use for your chosen themes, in ```#rrggbb``` hex code 
 format. There should be the same number of colors as the number of 
 non-background/mask layers in your chosen themes, separated by ```/```. 
 Multiple colorsets can be comma-separated. ```/same/``` as a color choice will 

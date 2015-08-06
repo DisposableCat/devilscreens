@@ -247,15 +247,22 @@ class monitorFrame:
     def __init__(self, parent, count, monitor):
         self.parent = parent
         self.monitor = monitor
+        self.cstyle = ttk.Style()
+        self.cstyle.configure('monitor.TCheckbutton')
+        self.lstyle = ttk.Style()
+        self.lstyle.configure('monitor.TLabel')
         self.monitorFrame = tk.Frame(self.parent, bd=5, relief=tk.GROOVE)
         self.toggleVar = tk.StringVar()
         self.toggleButton = ttk.Checkbutton(self.monitorFrame,
                                             text="Monitor " + str(count + 1),
                                             variable=self.toggleVar,
                                             onvalue=str(count + 1),
-                                            offvalue='')
-        self.label = ttk.Label(self.monitorFrame, text="{0}x{1}".format(
-            str(self.monitor.w), str(self.monitor.h)), justify=tk.CENTER)
+                                            offvalue='',
+                                            style='monitor.TCheckbutton')
+        self.label = ttk.Label(
+            self.monitorFrame, text="{0}x{1}".format(
+                str(self.monitor.w), str(self.monitor.h)), justify=tk.CENTER,
+            style='monitor.TLabel')
         self.toggleButton.pack()
         self.label.pack()
         self.parent.create_window(self.monitor.cx, self.monitor.cy,
@@ -272,6 +279,7 @@ class configFrame:
         self.rootFrame.pack(fill=tk.X, expand=1)
         self.makeTopFrame()
         self.makeIntervalFrame()
+        self.makeColorFrame()
         self.makeMonitorFrame()
         self.makeBottomFrame()
 
@@ -301,6 +309,35 @@ class configFrame:
     def makeColorFrame(self):
         self.colorFrame = tk.Frame(self.rootFrame)
         self.colorFrame.pack()
+        self.bgColorVar = tk.StringVar()
+        self.bgColorVar.set(self.parent.bgColor)
+        self.fgColorVar = tk.StringVar()
+        self.fgColorVar.set(self.parent.fgColor)
+        self.colorBgButton = ttk.Button(
+            self.colorFrame, text="BG Color...",
+            command=lambda: self.getColor(self.bgColorVar))
+        self.colorBgButton.pack(side=tk.LEFT)
+        self.colorFgButton = ttk.Button(
+            self.colorFrame, text="FG Color...",
+            command=lambda: self.getColor(self.fgColorVar))
+        self.colorFgButton.pack(side=tk.LEFT)
+
+    def getColor(self, var):
+        color = tkColorChooser.askcolor()[1]
+        var.set(color)
+        self.setUiColors()
+
+    def setUiColors(self):
+        ttk.Style().configure("monitor.TCheckbutton",
+                              foreground=self.fgColorVar.get())
+        ttk.Style().configure('monitor.TLabel',
+                              foreground=self.fgColorVar.get())
+        ttk.Style().configure("monitor.TCheckbutton",
+                              background=self.bgColorVar.get())
+        ttk.Style().configure('monitor.TLabel',
+                              background=self.bgColorVar.get())
+        for frame in self.monitorButtons:
+            frame.monitorFrame.config(bg=self.bgColorVar.get())
 
     def makeIntervalFrame(self):
         self.intervalFrame = tk.Frame(self.rootFrame)
@@ -335,7 +372,7 @@ class configFrame:
                                     height=self.parent.totalh / 10)
         self.monitorButtons = list()
         self.monitorVars = list()
-        self.mlistFrame.pack(side=tk.TOP, padx=5)
+        self.mlistFrame.pack(side=tk.TOP, padx=15)
         for count, monitor in enumerate(self.parent.monitors):
             monitor.correctCoords(self.parent.minx, self.parent.miny)
             monitor.getConfCoords(self.parent.totalw, int(self.mlistFrame.cget(
@@ -356,6 +393,7 @@ class configFrame:
             self.monitorVars.append(frame.toggleVar)
             if count in self.parent.displaysToUse:
                 frame.toggleButton.invoke()
+        self.setUiColors()
 
     def makeBottomFrame(self):
         self.bottomFrame = tk.Frame(self.rootFrame)
@@ -460,6 +498,9 @@ class ssRoot(tk.Tk):
         self.config.set("Config", "interval", self.confGUI.vinterval.get())
         self.config.set("Config", "offset", self.confGUI.offsetBool.get())
         self.config.set("Config", "folder", self.confGUI.folderVar.get())
+        self.config.set("Config", "background color",
+                        self.confGUI.bgColorVar.get())
+        self.config.set("Config", "text color", self.confGUI.fgColorVar.get())
         with open(os.path.join(self.baseDir, 'slideshow.ini'), 'wb') as \
                 configfile:
             self.config.write(configfile)
