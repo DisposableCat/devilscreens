@@ -422,6 +422,7 @@ class configFrame:
 class ssRoot(tk.Tk):
     def __init__(self, parent):
         tk.Tk.__init__(self, parent)
+        self.title("DevilScreens Config")
         self.childWindows = 0
         self.baseDir = os.getcwdu()
         self.totalImages = tk.IntVar()
@@ -568,6 +569,7 @@ class slideShowWindow(tk.Toplevel):
     def __init__(self, parent, monitor, imagelist, interval, offset, theme,
                  colors, background):
         tk.Toplevel.__init__(self, parent)
+        self.title("DevilScreens")
         self.parent = parent
         self.baseDir = parent.baseDir
         self.m = monitor

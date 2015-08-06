@@ -77,6 +77,8 @@ cause the original color of the corresponding layer to be used.
 Once you've actually got a slideshow going, mouse over each window to show buttons. Buttons are next, previous, pause, play (replaces pause when paused) and share, which right now just opens the file in your default image viewer. 
 - Pausing and unpausing *will* mess up the timing right now - the interval will stay the same, but the synchronization between monitors will be totally verkakte. I need to write a proper clock scheduler for this, which is high on the to do list.
 - You can absolutely hit previous until you go back to before the first image in the show - you'll just start going through images from the back to the front at that point. Going forward will eventually bring you back to the start and you can continue forwards. The list of files is implemented as an infinite wraparound list (so if you run out, it starts over, forever). This does mean that if you're running multiple monitors you can never see the same picture on two different screens without restarting the app. Hmm. Maybe I'll add some config options about that.
+- To exit, click into each window and hit "Esc". The last window to die will
+ exit the whole program.
 
 Theme Format
 -----------
