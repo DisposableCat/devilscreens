@@ -25,6 +25,10 @@ from iconsassemble import iconAssembler
 # Copyright (c) 2015 Peter K Cawley. Released under MIT license; see
 # LICENSE.txt
 
+if sys.executable.endswith("pythonw.exe"):
+    sys.stdout = open(os.devnull, "w")
+    sys.stderr = open(os.devnull, 'w')
+
 def handleExceptions():
     # with thanks to Brad Barrows:
     # http://stackoverflow.com/questions/1508467/
@@ -187,9 +191,9 @@ class imageObject(object):
         except AttributeError:
             self.artist = ""
 
-    def examine(self):
+    def __str__(self):
         for each in vars(self):
-            print each + " : " + vars(self)[each]
+            return each + " : " + vars(self)[each]
 
 
 class fancyButton:
