@@ -66,13 +66,22 @@ class usableScreen:
         self.y = Screen.y
         self.w = Screen.width
         self.h = Screen.height
+        self.lx = self.x + self.w
+        self.ly = self.y + self.h
         if self.x < 0:
             self.setPos(rmargin, '+')
         if self.x > 0:
             self.setPos(lmargin, '')
         if self.x == 0:
             self.setPos(0.5, '')
-        self.dimensions = (self.w, self.h, self.gSign, self.x, self.y,)
+        if self.y < 0:
+            self.setYPos('+')
+        if self.y > 0:
+            self.setYPos('')
+        if self.y == 0:
+            self.setYPos('')
+        self.dimensions = (self.w, self.h, self.gSign, self.x, self.ySign,
+                           self.y,)
         self.pw = self.w / 2
         self.ph = self.h / 2
         self.t = int(self.h * tmargin)
@@ -87,6 +96,9 @@ class usableScreen:
     def setPos(self, percent, string):
         self.cPos = int(self.w * percent)
         self.gSign = string
+
+    def setYPos(self, string):
+        self.ySign = string
 
     def getConfCoords(self, canvasDim, origDim):
         ratio = origDim / canvasDim
@@ -383,16 +395,6 @@ class configFrame:
                 "width")))
             self.monitorButtons.append(monitorFrame(self.mlistFrame, count,
                                                     monitor))
-        totalw = sum(monitor.cw for monitor in self.parent.monitors)
-        totalh = sum(monitor.ch for monitor in self.parent.monitors)
-        maxx = max(monitor.cx for monitor in self.parent.monitors)
-        maxy = max(monitor.cy for monitor in self.parent.monitors)
-        maxw = max(monitor.cw for monitor in self.parent.monitors)
-        maxh = max(monitor.ch for monitor in self.parent.monitors)
-        if maxx > maxy:
-            self.mlistFrame.config(height=maxh)
-        if maxy > maxx:
-            self.mlistFrame.config(width=maxw)
         for count, frame in enumerate(self.monitorButtons):
             self.monitorVars.append(frame.toggleVar)
             if count in self.parent.displaysToUse:
@@ -556,10 +558,12 @@ class ssRoot(tk.Tk):
         for each in monlist:
             self.monitors.append(usableScreen(each))
         self.monitors.sort(key=operator.attrgetter('x', 'y'))
-        self.totalw = sum(abs(monitor.w) for monitor in self.monitors)
-        self.totalh = sum(abs(monitor.h) for monitor in self.monitors)
+        self.maxlx = max(monitor.lx for monitor in self.monitors)
         self.minx = min(monitor.x for monitor in self.monitors)
+        self.maxly = max(monitor.ly for monitor in self.monitors)
         self.miny = min(monitor.y for monitor in self.monitors)
+        self.totalw = abs(self.maxlx - self.minx)
+        self.totalh = abs(self.maxly - self.miny)
 
     def setOffset(self):
         self.startingOffset = self.interval / len(self.displaysToUse)
@@ -591,7 +595,7 @@ class slideShowWindow(tk.Toplevel):
         self.focus_force()
         self.configure(background='black')
         self.overrideredirect(1)
-        self.geometry("%dx%d%s%+d%+d" % self.m.dimensions)
+        self.geometry("%dx%d%s%+d%s%+d" % self.m.dimensions)
         self.makePanel()
         self.bind('<Key-Escape>', self.closeWindow)
         self.initButtons()
