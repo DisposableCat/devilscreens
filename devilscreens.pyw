@@ -29,6 +29,7 @@ if sys.executable.endswith("pythonw.exe"):
     sys.stdout = open(os.devnull, "w")
     sys.stderr = open(os.devnull, 'w')
 
+
 def handleExceptions():
     # with thanks to Brad Barrows:
     # http://stackoverflow.com/questions/1508467/
@@ -557,6 +558,7 @@ class ssRoot(tk.Tk):
         self.monitors = list()
         for each in monlist:
             self.monitors.append(usableScreen(each))
+        # figure out dimensions of canvas
         self.monitors.sort(key=operator.attrgetter('x', 'y'))
         self.maxlx = max(monitor.lx for monitor in self.monitors)
         self.minx = min(monitor.x for monitor in self.monitors)
