@@ -116,6 +116,8 @@ class imageList(object):
         self.files = wrappingList(data)
         self.loadedIndex = tk.IntVar()
         self.loadedIndex.set(self.parent.startIndex)
+        self.minIndex = self.loadedIndex.get()
+        self.maxIndex = self.loadedIndex.get()
         print self.loadedIndex.get()
 
     def __len__(self):
@@ -129,10 +131,18 @@ class imageList(object):
 
     def nextImage(self):
         self.loadedIndex.set(self.loadedIndex.get() + 1)
+        if self.loadedIndex.get() > self.maxIndex:
+            self.parent.parent.totalImages.set(
+                self.parent.parent.totalImages.get() + 1)
+            self.maxIndex += 1
         self.updateActiveImage("next")
 
     def prevImage(self):
         self.loadedIndex.set(self.loadedIndex.get() - 1)
+        if self.loadedIndex.get() < self.minIndex:
+            self.parent.parent.totalImages.set(
+                self.parent.parent.totalImages.get() + 1)
+            self.minIndex -= 1
         self.updateActiveImage("prev")
 
     def updateActiveImage(self, calledFromButton):
@@ -653,9 +663,6 @@ class slideShowWindow(tk.Toplevel):
         self.running.set(True)
 
     def closeWindow(self, event):
-        # total is buggy as fuck, need to fix
-        self.parent.totalImages.set(self.parent.totalImages.get() +
-                                    self.il.loadedIndex.get())
         if self.parent.childWindows == 1:
             self.parent.destroy()
         else:
