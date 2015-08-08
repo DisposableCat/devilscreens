@@ -117,35 +117,26 @@ class imageList(object):
         self.loadedIndex = tk.IntVar()
         self.loadedIndex.set(self.parent.startIndex)
         print self.loadedIndex.get()
-        self.historyArray = collections.deque()
-        for x in range(-20, 20):
-            self.historyArray.append(imageObject(self.files[x]))
 
     def __len__(self):
         return len(self.files)
 
     def __getitem__(self, item):
-        return self.historyArray[item % len(self.historyArray)]
+        return self.files[item % len(self.files)]
 
     def passer(self):
         pass
 
     def nextImage(self):
         self.loadedIndex.set(self.loadedIndex.get() + 1)
-        self.historyArray.popleft()
-        self.historyArray.append(
-            imageObject(self.files[self.loadedIndex.get() + 20]))
         self.updateActiveImage("next")
 
     def prevImage(self):
         self.loadedIndex.set(self.loadedIndex.get() - 1)
-        self.historyArray.pop()
-        self.historyArray.appendleft(
-            imageObject(self.files[self.loadedIndex.get() - 20]))
         self.updateActiveImage("prev")
 
     def updateActiveImage(self, calledFromButton):
-        self.actImg = self.historyArray[0]
+        self.actImg = imageObject(self.files[self.loadedIndex.get()])
         w, h = self.parent.m.w, self.parent.m.h
         iw, ih = self.actImg.image.size
         ratio = min(w / iw, h / ih)
