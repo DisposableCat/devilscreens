@@ -15,7 +15,7 @@ import time
 import sys
 import traceback
 import operator
-
+import io
 from PIL import Image
 from PIL import ImageTk
 import pyglet
@@ -115,7 +115,8 @@ class imageList(object):
         self.intervalTime = self.parent.interval
         self.files = wrappingList(data)
         self.loadedIndex = tk.IntVar()
-        self.loadedIndex.set(0)
+        self.loadedIndex.set(self.parent.startIndex)
+        print self.loadedIndex.get()
         self.historyArray = collections.deque()
         for x in range(-20, 20):
             self.historyArray.append(imageObject(self.files[x]))
@@ -195,7 +196,9 @@ class imageObject(object):
         self.ordName, self.ext = os.path.splitext(ordFName)
         self.fileHash = self.ordName[-64:]
         try:
-            self.image = Image.open(ordFName)
+            with open(ordFName, 'rb') as f:
+                iofile = io.BytesIO(f.read())
+            self.image = Image.open(iofile)
         except Exception, e:
             logging.exception(e)
         try:
@@ -409,7 +412,7 @@ class configFrame:
 
     def makeStartQuit(self, frame):
         startButton = ttk.Button(
-            frame, text="Start Show", command=self.parent.startShow)
+            frame, text="Start Show", command=self.parent.startButton)
         startButton.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
         quitButton = ttk.Button(
             frame, text="Quit", command=self.parent.destroy)
@@ -514,23 +517,46 @@ class ssRoot(tk.Tk):
                 configfile:
             self.config.write(configfile)
 
-    def startShow(self):
+    def startButton(self):
         self.saveConfig()
         self.readConfig()
         self.setOffset()
+        if hasattr(self, 'displaysUsed'):
+            self.reloadWindows()
+        else:
+            self.startShow()
+
+    def startShow(self):
         self.setupShuffledList()
-        self.offsetCount = 0
+        self.indexlist = list([0] * len(self.displaysToUse))
+        print self.indexlist
+        self.launchShowWindows()
+
+    def launchShowWindows(self):
         self.displaysUsed = list()
         self.displayId = 0
         for count, each in enumerate(self.displaysToUse):
             offset = int(self.startingOffset * self.displayId)
-            self.displaysUsed.append(slideShowWindow(self, self.monitors[
-                each], self.imageListArray[count], self.interval, offset,
-                                                     self.themes[count],
-                                                     self.colors[count],
-                                                     self.backgrounds[count]))
+            self.displaysUsed.append(slideShowWindow(
+                self,
+                self.monitors[each],
+                self.imageListArray[count],
+                self.interval,
+                offset,
+                self.themes[count],
+                self.colors[count],
+                self.backgrounds[count],
+                self.indexlist[count]))
             self.displayId += 1
         self.withdraw()
+
+    def reloadWindows(self):
+        self.indexlist = list()
+        for toplevel in self.displaysUsed:
+            self.indexlist.append(toplevel.il.loadedIndex.get())
+            toplevel.destroy()
+        print self.indexlist
+        self.launchShowWindows()
 
     def setupShuffledList(self):
         pImgList = list()
@@ -578,13 +604,14 @@ class ssRoot(tk.Tk):
 
 class slideShowWindow(tk.Toplevel):
     def __init__(self, parent, monitor, imagelist, interval, offset, theme,
-                 colors, background):
+                 colors, background, startindex):
         tk.Toplevel.__init__(self, parent)
         self.title("DevilScreens")
         self.parent = parent
         self.baseDir = parent.baseDir
         self.m = monitor
         self.offset = offset
+        self.startIndex = startindex
         self.interval = interval
         self.theme = theme
         self.colors = colors
@@ -600,10 +627,14 @@ class slideShowWindow(tk.Toplevel):
         self.geometry("%dx%d%s%+d%s%+d" % self.m.dimensions)
         self.makePanel()
         self.bind('<Key-Escape>', self.closeWindow)
+        self.bind('c', self.parentShow)
         self.initButtons()
         self.p.bind('<Enter>', self.showButtons)
         self.p.bind('<Leave>', self.hideButtons)
         self.parent.childWindows += 1
+
+    def parentShow(self, event):
+        self.parent.deiconify()
 
     def makePanel(self):
         self.p = tk.Canvas(self, bd=0, highlightthickness=0)
