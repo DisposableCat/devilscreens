@@ -441,7 +441,6 @@ class eventTicker:
             self.updateTimer.append(time.time() + count)
             display.il.updateActiveImage('timer')
         self.updateIntervals = [self.interval] * len(self.parent.displaysUsed)
-        print self.updateIntervals
 
     def updater(self):
         for count, (elapsedTime, display, checkTime) in enumerate(zip(
@@ -452,7 +451,11 @@ class eventTicker:
                 if display.running.get():
                     display.il.updateActiveImage('timer')
                 self.updateTimer[count] = time.time()
-        self.parent.after(500, self.updater)
+        self.next = self.parent.after(500, self.updater)
+
+    def reInitialize(self):
+        self.parent.after_cancel(self.next)
+        self.__init__(self.parent)
 
 
 class ssRoot(tk.Tk):
@@ -552,11 +555,11 @@ class ssRoot(tk.Tk):
             self.startShow()
 
     def startShow(self):
-        self.setupShuffledList()
+        self.shuffledLists = list()
+        for each in self.displaysToUse:
+            self.shuffledLists.append(self.setupShuffledList())
         self.indexlist = list([0] * len(self.displaysToUse))
         self.launchShowWindows()
-        self.eventLoop = eventTicker(self)
-        self.eventLoop.updater()
 
     def launchShowWindows(self):
         self.displaysUsed = list()
@@ -566,7 +569,7 @@ class ssRoot(tk.Tk):
             self.displaysUsed.append(slideShowWindow(
                 self,
                 self.monitors[each],
-                self.imageListArray[count],
+                self.shuffledLists[count],
                 self.interval,
                 offset,
                 self.themes[count],
@@ -574,16 +577,32 @@ class ssRoot(tk.Tk):
                 self.backgrounds[count],
                 self.indexlist[count]))
             self.displayId += 1
+        self.eventLoop = eventTicker(self)
+        self.eventLoop.updater()
         self.withdraw()
 
     def reloadWindows(self):
-        if len(self.imageListArray) != len(self.displaysToUse):
-            self.startShow()
-            return
+        self.eventLoop.reInitialize()
         self.indexlist = list()
+        self.shuffledLists = list()
+        activeMonitors = list()
         for toplevel in self.displaysUsed:
-            self.indexlist.append(toplevel.il.loadedIndex.get())
+            varList = list()
+            varList.append(toplevel.rawil)
+            varList.append(toplevel.il.loadedIndex.get() - 2)
+            varList.append(toplevel.m.number - 1)
+            activeMonitors.append(varList)
             toplevel.destroy()
+        monitorNumbers = [x[2] for x in activeMonitors]
+        for display in self.displaysToUse:
+            if display in monitorNumbers:
+                for monitor in activeMonitors:
+                    if monitor[2] == display:
+                        self.shuffledLists.append(monitor[0])
+                        self.indexlist.append(monitor[1])
+            else:
+                self.shuffledLists.append(self.setupShuffledList())
+                self.indexlist.append(0)
         self.launchShowWindows()
 
     def setupShuffledList(self):
@@ -600,11 +619,7 @@ class ssRoot(tk.Tk):
             log.error("There are no images in the source folder! Exiting")
             exit()
         shuffle(pImgList)
-        self.imageListArray = list()
-        for i in xrange(0, len(pImgList),
-                        int(len(pImgList) / self.numberOfMonitors)):
-            self.imageListArray.append(pImgList[i:i + (
-                int(len(pImgList) / self.numberOfMonitors))])
+        return pImgList
 
     def initDisplays(self):
         self.display = pyglet.canvas.get_display()
@@ -614,6 +629,8 @@ class ssRoot(tk.Tk):
             self.monitors.append(usableScreen(each))
         # figure out dimensions of canvas
         self.monitors.sort(key=operator.attrgetter('x', 'y'))
+        for count, monitor in enumerate(self.monitors):
+            monitor.number = count + 1
         self.maxlx = max(monitor.lx for monitor in self.monitors)
         self.minx = min(monitor.x for monitor in self.monitors)
         self.maxly = max(monitor.ly for monitor in self.monitors)
@@ -644,6 +661,7 @@ class slideShowWindow(tk.Toplevel):
         self.theme = theme
         self.colors = colors
         self.background = background
+        self.rawil = imagelist
         self.il = imageList(self, imagelist)
         self.artist = tk.StringVar()
         self.artist.set(None)
