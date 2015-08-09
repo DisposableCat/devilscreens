@@ -118,16 +118,12 @@ class imageList(object):
         self.loadedIndex.set(self.parent.startIndex)
         self.minIndex = self.loadedIndex.get()
         self.maxIndex = self.loadedIndex.get()
-        print self.loadedIndex.get()
 
     def __len__(self):
         return len(self.files)
 
     def __getitem__(self, item):
         return self.files[item % len(self.files)]
-
-    def passer(self):
-        pass
 
     def nextImage(self):
         self.loadedIndex.set(self.loadedIndex.get() + 1)
@@ -146,6 +142,9 @@ class imageList(object):
         self.updateActiveImage("prev")
 
     def updateActiveImage(self, calledFromButton):
+        if calledFromButton == 'timer':
+            self.nextImage()
+            return
         self.actImg = imageObject(self.files[self.loadedIndex.get()])
         w, h = self.parent.m.w, self.parent.m.h
         iw, ih = self.actImg.image.size
@@ -153,9 +152,9 @@ class imageList(object):
         size = int(iw * ratio), int(ih * ratio)
         self.actImg.image = self.actImg.image.resize(size,
                                                      resample=Image.BICUBIC)
-        self.showImage(calledFromButton)
+        self.showImage()
 
-    def showImage(self, calledFromButton):
+    def showImage(self):
         self.parent.p.displayimg = ImageTk.PhotoImage(
             self.actImg.image)
         self.parent.p.itemconfig(self.parent.p.show,
@@ -167,11 +166,6 @@ class imageList(object):
         else:
             self.parent.p.itemconfig(self.parent.p.artistWindow,
                                      state="normal")
-        if self.parent.running.get():
-            func = self.nextImage
-        else:
-            func = self.passer
-        self.parent.nextAlarm = self.parent.after(self.intervalTime, func)
 
 
 class wrappingList(collections.Sequence):
@@ -430,6 +424,35 @@ class configFrame:
             return True
 
 
+class eventTicker:
+    def __init__(self, parent):
+        self.eventQueue = list()
+        self.parent = parent
+        self.interval = self.parent.interval / 1000
+        self.startingOffset = self.parent.startingOffset
+        self.startTime = time.time()
+        self.initOffset()
+
+    def initOffset(self):
+        self.updateTimer = list()
+        count = self.interval
+        for window in self.parent.displaysUsed:
+            count += self.startingOffset
+            self.updateTimer.append(count)
+        self.updateIntervals = self.updateTimer[:]
+
+    def updater(self):
+        for count, (elapsedTime, display, checkTime) in enumerate(zip(
+                self.updateTimer[:],
+                self.parent.displaysUsed,
+                self.updateIntervals)):
+            if time.time() - elapsedTime > checkTime:
+                if display.running.get():
+                    display.il.updateActiveImage('timer')
+                self.updateTimer[count] = time.time()
+        self.parent.after(500, self.updater)
+
+
 class ssRoot(tk.Tk):
     def __init__(self, parent):
         tk.Tk.__init__(self, parent)
@@ -448,7 +471,6 @@ class ssRoot(tk.Tk):
         log.info("Interval = " + str(self.interval))
         self.initDisplays()
         self.configGui()
-        # self.startShow()
 
     def readConfig(self):
         if os.path.exists(os.path.join(self.baseDir, "slideshow.ini")):
@@ -530,8 +552,9 @@ class ssRoot(tk.Tk):
     def startShow(self):
         self.setupShuffledList()
         self.indexlist = list([0] * len(self.displaysToUse))
-        print self.indexlist
         self.launchShowWindows()
+        self.eventLoop = eventTicker(self)
+        self.eventLoop.updater()
 
     def launchShowWindows(self):
         self.displaysUsed = list()
@@ -556,7 +579,6 @@ class ssRoot(tk.Tk):
         for toplevel in self.displaysUsed:
             self.indexlist.append(toplevel.il.loadedIndex.get())
             toplevel.destroy()
-        print self.indexlist
         self.launchShowWindows()
 
     def setupShuffledList(self):
@@ -627,8 +649,7 @@ class slideShowWindow(tk.Toplevel):
         self.overrideredirect(1)
         self.geometry("%dx%d%s%+d%s%+d" % self.m.dimensions)
         self.makePanel()
-        self.bind('<Key-Escape>', self.closeWindow)
-        self.bind('c', self.parentShow)
+        self.bind('<Key-Escape>', self.parentShow)
         self.initButtons()
         self.p.bind('<Enter>', self.showButtons)
         self.p.bind('<Leave>', self.hideButtons)
@@ -658,8 +679,6 @@ class slideShowWindow(tk.Toplevel):
         self.p.artistWindow = self.p.create_window(self.m.pw, self.m.h,
                                                    anchor="s",
                                                    window=self.artistLabel)
-        self.nextAlarm = self.after(self.offset, self.il.updateActiveImage,
-                                    False)
         self.running.set(True)
 
     def closeWindow(self, event):
@@ -685,21 +704,16 @@ class slideShowWindow(tk.Toplevel):
         self.p.delete("button")
 
     def prevImage(self):
-        self.after_cancel(self.nextAlarm)
         self.il.prevImage()
 
     def nextImage(self):
-        self.after_cancel(self.nextAlarm)
         self.il.nextImage()
 
     def pauseUnpause(self):
         if self.running.get():
-            self.after_cancel(self.nextAlarm)
             self.running.set(False)
-            # restart delay needs fixed
         else:
             self.running.set(True)
-            self.il.updateActiveImage("unpause")
 
     def shareImage(self):
         os.startfile(self.il.actImg.ordFName)
