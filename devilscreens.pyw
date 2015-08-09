@@ -429,17 +429,19 @@ class eventTicker:
         self.eventQueue = list()
         self.parent = parent
         self.interval = self.parent.interval / 1000
-        self.startingOffset = self.parent.startingOffset
+        self.startingOffset = self.parent.startingOffset / 1000
         self.startTime = time.time()
         self.initOffset()
 
     def initOffset(self):
         self.updateTimer = list()
-        count = self.interval
-        for window in self.parent.displaysUsed:
+        count = 0
+        for display in self.parent.displaysUsed:
             count += self.startingOffset
-            self.updateTimer.append(count)
-        self.updateIntervals = self.updateTimer[:]
+            self.updateTimer.append(time.time() + count)
+            display.il.updateActiveImage('timer')
+        self.updateIntervals = [self.interval] * len(self.parent.displaysUsed)
+        print self.updateIntervals
 
     def updater(self):
         for count, (elapsedTime, display, checkTime) in enumerate(zip(
@@ -575,6 +577,9 @@ class ssRoot(tk.Tk):
         self.withdraw()
 
     def reloadWindows(self):
+        if len(self.imageListArray) != len(self.displaysToUse):
+            self.startShow()
+            return
         self.indexlist = list()
         for toplevel in self.displaysUsed:
             self.indexlist.append(toplevel.il.loadedIndex.get())
