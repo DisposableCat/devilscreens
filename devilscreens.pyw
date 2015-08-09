@@ -190,8 +190,11 @@ class imageObject(object):
         self.ordFName = ordFName
         self.ordName, self.ext = os.path.splitext(ordFName)
         self.fileHash = self.ordName[-64:]
+        self.openFile()
+
+    def openFile(self):
         try:
-            with open(ordFName, 'rb') as f:
+            with open(self.ordFName, 'rb') as f:
                 iofile = io.BytesIO(f.read())
             self.image = Image.open(iofile)
         except Exception, e:
@@ -442,6 +445,9 @@ class eventTicker:
             display.il.updateActiveImage('timer')
         self.updateIntervals = [self.interval] * len(self.parent.displaysUsed)
 
+    def updateDisplay(self, display):
+        display.il.updateActiveImage('timer')
+
     def updater(self):
         for count, (elapsedTime, display, checkTime) in enumerate(zip(
                 self.updateTimer[:],
@@ -449,9 +455,9 @@ class eventTicker:
                 self.updateIntervals)):
             if time.time() - elapsedTime > checkTime:
                 if display.running.get():
-                    display.il.updateActiveImage('timer')
+                    self.updateDisplay(display)
                 self.updateTimer[count] = time.time()
-        self.next = self.parent.after(500, self.updater)
+        self.next = self.parent.after(100, self.updater)
 
     def reInitialize(self):
         self.parent.after_cancel(self.next)
