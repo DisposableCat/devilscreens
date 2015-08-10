@@ -18,8 +18,7 @@ we'll troubleshoot so that I can fix it.
 
 You can get Pyglet from pip install pyglet.
 
-If you're on Windows, get Pillow from here: http://www.lfd.uci
-.edu/~gohlke/pythonlibs/
+If you're on Windows, get Pillow from here: http://www.lfd.uci.edu/~gohlke/pythonlibs/
 
 Once you've got all that, download the repo and run devilscreens.pyw.
 
@@ -45,6 +44,10 @@ files ending in JPG/PNG/JPEG/GIF in this folder will be shuffled and divided int
  appear in the GUI in the same order they appear in physical space). Each 
  monitor has a checkbox which indicates whether or not DevilScreens will use
   it.
+- BG color: The color to use for the background of the image windows
+ and text labels.
+- FG color: The color to use for label text. Should not be the same as above.
+ - The monitor squares will show the colors selected for both FG and BG.
 - Start Show: Self-explanatory; this starts the show.
 - Quit: Also self-explanatory.
   
@@ -52,9 +55,6 @@ There are several other options available via slideshow.ini, which also
 saves the options you set in the GUI. Eventually these will all appear in 
 the GUI as well. The additional options in the INI are currently as follows:
 
-- Background color: The color to use for the background of the image windows
- and text labels.
-- Text color: The color to use for label text. Should not be the same as above.
 - Themes: A comma-separated list of the themes you want to use. There are 
 currently two themes included. Themes represent button shapes and the 
 appropriate Photoshop layer effects to make them look good. They are 
@@ -76,9 +76,16 @@ cause the original color of the corresponding layer to be used.
 
 Once you've actually got a slideshow going, mouse over each window to show buttons. Buttons are next, previous, pause, play (replaces pause when paused) and share, which right now just opens the file in your default image viewer. 
 - Pausing and unpausing *will* mess up the timing right now - the interval will stay the same, but the synchronization between monitors will be totally verkakte. I need to write a proper clock scheduler for this, which is high on the to do list.
-- You can absolutely hit previous until you go back to before the first image in the show - you'll just start going through images from the back to the front at that point. Going forward will eventually bring you back to the start and you can continue forwards. The list of files is implemented as an infinite wraparound list (so if you run out, it starts over, forever). This does mean that if you're running multiple monitors you can never see the same picture on two different screens without restarting the app. Hmm. Maybe I'll add some config options about that.
-- To exit, click into each window and hit "Esc". The last window to die will
- exit the whole program.
+- You can absolutely hit previous until you go back to before the first 
+image  in the show - you'll just start going through images from the back to the front at that point. Going forward will eventually bring you back to the start and you can continue forwards. The list of files is implemented
+    as an infinite wraparound list (so if you run out, it starts over, 
+    forever). Each monitor has an independent list containing all files in 
+    the folder.
+- To readjust options without killing the show, hit Esc with focus on any 
+show window. Then change your options and hit "Start Show". The history 
+should not be affected for any window that is not removed; adding a window 
+that isn't currently shown initializes a new history.
+- To exit, hit Esc with focus on any show window. Then hit Quit.
 
 Theme Format
 -----------
