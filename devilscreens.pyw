@@ -457,7 +457,7 @@ class eventTicker:
                 if display.running.get():
                     self.updateDisplay(display)
                 self.updateTimer[count] = time.time()
-        self.next = self.parent.after(100, self.updater)
+        self.next = self.parent.after(10, self.updater)
 
     def reInitialize(self):
         self.parent.after_cancel(self.next)
