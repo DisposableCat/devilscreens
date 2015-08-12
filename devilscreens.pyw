@@ -6,20 +6,20 @@ import tkFileDialog
 import tkColorChooser
 import ttk
 import os
+import re
 from random import shuffle
 import ConfigParser
-import re
 import logging
 import collections
 import time
 import sys
 import traceback
 import operator
-import io
 from PIL import Image
 from PIL import ImageTk
 import pyglet
 from iconsassemble import iconAssembler
+from ImageLoader import ImageLoader
 
 
 # Copyright (c) 2015 Peter K Cawley. Released under MIT license; see
@@ -110,6 +110,7 @@ class usableScreen:
 
 
 class imageList(object):
+
     def __init__(self, parent, data):
         self.parent = parent
         self.intervalTime = self.parent.interval
@@ -118,6 +119,8 @@ class imageList(object):
         self.loadedIndex.set(self.parent.startIndex)
         self.minIndex = self.loadedIndex.get()
         self.maxIndex = self.loadedIndex.get()
+        self.loader = parent.loader
+        self.forwardRead(20)
 
     def __len__(self):
         return len(self.files)
@@ -125,12 +128,17 @@ class imageList(object):
     def __getitem__(self, item):
         return self.files[item % len(self.files)]
 
+    def forwardRead(self, plus):
+        start = self.maxIndex
+        end = start + plus
+        if self.maxIndex < end:
+            self.maxIndex = end
+        for each in range(start, end):
+            im = self.files[each]
+            self.loader.put(im, self.parent.m.w, self.parent.m.h)
+
     def nextImage(self):
         self.loadedIndex.set(self.loadedIndex.get() + 1)
-        if self.loadedIndex.get() > self.maxIndex:
-            self.parent.parent.totalImages.set(
-                self.parent.parent.totalImages.get() + 1)
-            self.maxIndex += 1
         self.updateActiveImage("next")
 
     def prevImage(self):
@@ -145,13 +153,12 @@ class imageList(object):
         if calledFromButton == 'timer':
             self.nextImage()
             return
+        self.forwardRead(2)
         self.actImg = imageObject(self.files[self.loadedIndex.get()])
-        w, h = self.parent.m.w, self.parent.m.h
-        iw, ih = self.actImg.image.size
-        ratio = min(w / iw, h / ih)
-        size = int(iw * ratio), int(ih * ratio)
-        self.actImg.image = self.actImg.image.resize(size,
-                                                     resample=Image.BICUBIC)
+        self.parent.parent.eventLoop.getWork()
+        self.actImg.image = self.parent.parent.eventLoop.loadedImages[
+            self.actImg.ordFName]
+        self.forwardRead(2)
         self.showImage()
 
     def showImage(self):
@@ -190,15 +197,7 @@ class imageObject(object):
         self.ordFName = ordFName
         self.ordName, self.ext = os.path.splitext(ordFName)
         self.fileHash = self.ordName[-64:]
-        self.openFile()
 
-    def openFile(self):
-        try:
-            with open(self.ordFName, 'rb') as f:
-                iofile = io.BytesIO(f.read())
-            self.image = Image.open(iofile)
-        except Exception, e:
-            logging.exception(e)
         try:
             self.artist = re.search('__(.+?)__', self.ordName).group(1)
             self.artist = re.sub(',', ' /', self.artist)
@@ -429,12 +428,12 @@ class configFrame:
 
 class eventTicker:
     def __init__(self, parent):
-        self.eventQueue = list()
         self.parent = parent
         self.interval = self.parent.interval / 1000
         self.startingOffset = self.parent.startingOffset / 1000
         self.startTime = time.time()
-        self.initOffset()
+        self.loadedImages = dict()
+        next = self.parent.after(10000, self.initOffset)
 
     def initOffset(self):
         self.updateTimer = list()
@@ -442,13 +441,23 @@ class eventTicker:
         for display in self.parent.displaysUsed:
             count += self.startingOffset
             self.updateTimer.append(time.time() + count)
-            display.il.updateActiveImage('timer')
         self.updateIntervals = [self.interval] * len(self.parent.displaysUsed)
+        self.next = self.parent.after(50, self.updater)
 
     def updateDisplay(self, display):
         display.il.updateActiveImage('timer')
 
+    def getWork(self):
+        for x in range(1, 100):
+            try:
+                imobj = self.parent.mainLoader.get()
+            except:
+                pass
+            if imobj is not None:
+                self.loadedImages[imobj[0]] = imobj[1]
+
     def updater(self):
+        self.getWork()
         for count, (elapsedTime, display, checkTime) in enumerate(zip(
                 self.updateTimer[:],
                 self.parent.displaysUsed,
@@ -473,6 +482,7 @@ class ssRoot(tk.Tk):
         self.baseDir = os.getcwdu()
         self.totalImages = tk.IntVar()
         self.totalImages.set(0)
+        self.mainLoader = ImageLoader()
         self.initialize()
 
     def initialize(self):
@@ -561,6 +571,7 @@ class ssRoot(tk.Tk):
             self.startShow()
 
     def startShow(self):
+        self.mainLoader.start(self.folder)
         self.shuffledLists = list()
         for each in self.displaysToUse:
             self.shuffledLists.append(self.setupShuffledList())
@@ -584,7 +595,6 @@ class ssRoot(tk.Tk):
                 self.indexlist[count]))
             self.displayId += 1
         self.eventLoop = eventTicker(self)
-        self.eventLoop.updater()
         self.withdraw()
 
     def reloadWindows(self):
@@ -659,6 +669,7 @@ class slideShowWindow(tk.Toplevel):
         tk.Toplevel.__init__(self, parent)
         self.title("DevilScreens")
         self.parent = parent
+        self.loader = parent.mainLoader
         self.baseDir = parent.baseDir
         self.m = monitor
         self.offset = offset
@@ -748,11 +759,17 @@ class slideShowWindow(tk.Toplevel):
         os.startfile(self.il.actImg.ordFName)
 
 
-root = ssRoot(None)
-# root.withdraw()
+def main():
+    global root
+    root = ssRoot(None)
+    # root.withdraw()
 
-root.mainloop()
+    root.mainloop()
 
-log.info('DevilScreens closed at ' + time.strftime("%c"))
-log.info('Showed ' + str(root.totalImages.get()) + ' total images')
-exit()
+    log.info('DevilScreens closed at ' + time.strftime("%c"))
+    log.info('Showed ' + str(root.totalImages.get()) + ' total images')
+    exit()
+
+
+if __name__ == '__main__':
+    main()
