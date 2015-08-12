@@ -25,7 +25,7 @@ def worker_main(input_queue, output_queue):
 class ImageLoader:
     OUTPUT_QUEUE_SIZE = 100
     INPUT_QUEUE_SIZE = 100
-    WORKER_COUNT = 4
+    WORKER_COUNT = 3
 
     def __init__(self):
         self.input_queue = Queue(self.INPUT_QUEUE_SIZE)

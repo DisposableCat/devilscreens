@@ -120,7 +120,7 @@ class imageList(object):
         self.minIndex = self.loadedIndex.get()
         self.maxIndex = self.loadedIndex.get()
         self.loader = parent.loader
-        self.forwardRead(20)
+        self.forwardRead(5)
 
     def __len__(self):
         return len(self.files)
@@ -131,14 +131,14 @@ class imageList(object):
     def forwardRead(self, plus):
         start = self.maxIndex
         end = start + plus
-        if self.maxIndex < end:
-            self.maxIndex = end
         for each in range(start, end):
             im = self.files[each]
             self.loader.put(im, self.parent.m.w, self.parent.m.h)
 
     def nextImage(self):
         self.loadedIndex.set(self.loadedIndex.get() + 1)
+        if self.maxIndex < self.loadedIndex.get():
+            self.maxIndex = self.loadedIndex.get()
         self.updateActiveImage("next")
 
     def prevImage(self):
@@ -153,12 +153,18 @@ class imageList(object):
         if calledFromButton == 'timer':
             self.nextImage()
             return
-        self.forwardRead(2)
         self.actImg = imageObject(self.files[self.loadedIndex.get()])
         self.parent.parent.eventLoop.getWork()
         self.actImg.image = self.parent.parent.eventLoop.loadedImages[
             self.actImg.ordFName]
-        self.forwardRead(2)
+        self.forwardRead(1)
+        if self.maxIndex > 10:
+            for each in xrange(0, self.maxIndex - 5):
+                try:
+                    del self.parent.parent.eventLoop.loadedImages[
+                        self.files[each]]
+                except KeyError:
+                    pass
         self.showImage()
 
     def showImage(self):
@@ -433,7 +439,7 @@ class eventTicker:
         self.startingOffset = self.parent.startingOffset / 1000
         self.startTime = time.time()
         self.loadedImages = dict()
-        next = self.parent.after(10000, self.initOffset)
+        next = self.parent.after(1000, self.initOffset)
 
     def initOffset(self):
         self.updateTimer = list()
@@ -448,7 +454,7 @@ class eventTicker:
         display.il.updateActiveImage('timer')
 
     def getWork(self):
-        for x in range(1, 100):
+        for x in range(1, 1000):
             try:
                 imobj = self.parent.mainLoader.get()
             except:
