@@ -20,11 +20,12 @@ def worker_main(input_queue, output_queue):
         image = image.resize(size, Image.BICUBIC)
         imobj = (path, image)
         output_queue.put(imobj)
+        print "put", path
 
 
 class ImageLoader:
-    OUTPUT_QUEUE_SIZE = 100
-    INPUT_QUEUE_SIZE = 100
+    OUTPUT_QUEUE_SIZE = 1000
+    INPUT_QUEUE_SIZE = 1000
     WORKER_COUNT = 3
 
     def __init__(self):

@@ -120,25 +120,35 @@ class imageList(object):
         self.minIndex = self.loadedIndex.get()
         self.maxIndex = self.loadedIndex.get()
         self.loader = parent.loader
-        self.forwardRead(5)
+        self.historyArray = collections.deque()
+        for x in range(-10, 10):
+            self.historyArray.append(imageObject(self.parent, self.files[x]))
 
     def __len__(self):
         return len(self.files)
 
     def __getitem__(self, item):
-        return self.files[item % len(self.files)]
+        return self.historyArray[item % len(self.historyArray)]
 
     def forwardRead(self, plus):
         start = self.maxIndex
         end = start + plus
         for each in range(start, end):
             im = self.files[each]
-            self.loader.put(im, self.parent.m.w, self.parent.m.h)
 
     def nextImage(self):
         self.loadedIndex.set(self.loadedIndex.get() + 1)
-        if self.maxIndex < self.loadedIndex.get():
-            self.maxIndex = self.loadedIndex.get()
+        if self.loadedIndex.get() > self.maxIndex:
+            self.parent.parent.totalImages.set(
+                self.parent.parent.totalImages.get() + 1)
+            self.maxIndex += 1
+        kill = self.historyArray.popleft()
+        try:
+            del self.parent.parent.eventLoop.loadedImages[kill]
+        except:
+            pass
+        self.historyArray.append(
+            imageObject(self.parent, self.files[self.loadedIndex.get() + 10]))
         self.updateActiveImage("next")
 
     def prevImage(self):
@@ -147,24 +157,23 @@ class imageList(object):
             self.parent.parent.totalImages.set(
                 self.parent.parent.totalImages.get() + 1)
             self.minIndex -= 1
+        kill = self.historyArray.pop()
+        try:
+            del self.parent.parent.eventLoop.loadedImages[kill]
+        except:
+            pass
+        self.historyArray.appendleft(
+            imageObject(self.parent, self.files[self.loadedIndex.get() - 10]))
         self.updateActiveImage("prev")
 
     def updateActiveImage(self, calledFromButton):
         if calledFromButton == 'timer':
             self.nextImage()
             return
-        self.actImg = imageObject(self.files[self.loadedIndex.get()])
+        self.actImg = self.historyArray[0]
         self.parent.parent.eventLoop.getWork()
         self.actImg.image = self.parent.parent.eventLoop.loadedImages[
             self.actImg.ordFName]
-        self.forwardRead(1)
-        if self.maxIndex > 10:
-            for each in xrange(0, self.maxIndex - 5):
-                try:
-                    del self.parent.parent.eventLoop.loadedImages[
-                        self.files[each]]
-                except KeyError:
-                    pass
         self.showImage()
 
     def showImage(self):
@@ -199,16 +208,18 @@ class wrappingList(collections.Sequence):
 
 
 class imageObject(object):
-    def __init__(self, ordFName):
+    def __init__(self, screen, ordFName):
         self.ordFName = ordFName
+        self.screen = screen
         self.ordName, self.ext = os.path.splitext(ordFName)
         self.fileHash = self.ordName[-64:]
-
+        self.loader = self.screen.loader
         try:
             self.artist = re.search('__(.+?)__', self.ordName).group(1)
             self.artist = re.sub(',', ' /', self.artist)
         except AttributeError:
             self.artist = ""
+        self.loader.put(self.ordFName, self.screen.m.w, self.screen.m.h)
 
     def __str__(self):
         for each in vars(self):
@@ -439,7 +450,7 @@ class eventTicker:
         self.startingOffset = self.parent.startingOffset / 1000
         self.startTime = time.time()
         self.loadedImages = dict()
-        next = self.parent.after(1000, self.initOffset)
+        next = self.parent.after(10000, self.initOffset)
 
     def initOffset(self):
         self.updateTimer = list()
@@ -448,6 +459,7 @@ class eventTicker:
             count += self.startingOffset
             self.updateTimer.append(time.time() + count)
         self.updateIntervals = [self.interval] * len(self.parent.displaysUsed)
+        self.getWork()
         self.next = self.parent.after(50, self.updater)
 
     def updateDisplay(self, display):
@@ -461,6 +473,9 @@ class eventTicker:
                 pass
             if imobj is not None:
                 self.loadedImages[imobj[0]] = imobj[1]
+                print "got", imobj
+            else:
+                print "none"
 
     def updater(self):
         self.getWork()
