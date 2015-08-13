@@ -172,6 +172,8 @@ class imageList(object):
             return
         self.actImg = self.historyArray[0]
         self.parent.parent.eventLoop.getWork()
+        # if self.actImg.ordFName.endswith("png"):
+        #     print "requesting" + self.actImg.ordFName
         self.actImg.image = self.parent.parent.eventLoop.loadedImages[
             self.actImg.ordFName]
         self.showImage()
@@ -467,15 +469,9 @@ class eventTicker:
 
     def getWork(self):
         for x in range(1, 1000):
-            try:
-                imobj = self.parent.mainLoader.get()
-            except:
-                pass
-            if imobj is not None:
+            imobj = self.parent.mainLoader.get()
+            if imobj is not "none":
                 self.loadedImages[imobj[0]] = imobj[1]
-                print "got", imobj
-            else:
-                print "none"
 
     def updater(self):
         self.getWork()
@@ -522,7 +518,8 @@ class ssRoot(tk.Tk):
             self.displaysToUse = map(int, self.displaysToUse)
             self.displaysToUse[:] = [x - 1 for x in self.displaysToUse]
             self.numberOfMonitors = len(self.displaysToUse)
-            self.interval = self.config.getint('Config', 'interval') * 1000
+            # self.interval = self.config.getint('Config', 'interval') * 1000
+            self.interval = 250
             self.folder = self.config.get('Config', 'folder')
             self.offsetPref = self.config.getboolean('Config', 'offset')
             self.bgColor = self.config.get('Config', 'background color')
