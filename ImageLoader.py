@@ -84,9 +84,10 @@ class ImageLoader:
         self.pool.terminate()
 
     def put(self, filename, w, h):
-        with open(filename, 'rb') as f:
-            iofile = io.BytesIO(f.read())
-        opentime = 0
+        with Timer() as t:
+            with open(filename, 'rb') as f:
+                iofile = io.BytesIO(f.read())
+        opentime = t.secs
         self.input_queue.put((iofile, w, h))
         return opentime
 
@@ -108,10 +109,11 @@ class ImageLoader:
 
 
 def main():
+    folder = "G:/pictures/stp/new"
     loader = ImageLoader()
     pImgList = list()
-    loader.start("E:/Dropbox/ordfaves")
-    os.chdir("E:/Dropbox/ordfaves")
+    loader.start(folder)
+    os.chdir(folder)
     uniSource = os.getcwdu()
     for fname in os.listdir(uniSource):
         path = os.path.join(uniSource, fname)
@@ -119,18 +121,17 @@ def main():
             continue
         if fname.endswith(('.jpg', '.png', '.jpeg', '.gif')):
             pImgList.append(fname)
+    print "files: ", len(pImgList)
     print "start"
-    count = 0
+    count = 1
     opentimer = set()
     resizetimer = set()
     for each in pImgList:
-        time.sleep(0.25)
         opentimer.add(loader.put(each, 1680, 1050))
-        count += 1
         imgobj = loader.get()
         if imgobj is not "none":
             resizetimer.add(imgobj)
-        print count
+            count += 1
         if count % 10 == 0:
             print len(resizetimer)
             resavg = sum(resizetimer) / len(resizetimer)
