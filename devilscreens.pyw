@@ -452,7 +452,7 @@ class eventTicker:
         self.startingOffset = self.parent.startingOffset / 1000
         self.startTime = time.time()
         self.loadedImages = dict()
-        next = self.parent.after(10000, self.initOffset)
+        opener = self.parent.after(10000, self.initOffset)
 
     def initOffset(self):
         self.updateTimer = list()
@@ -519,7 +519,7 @@ class ssRoot(tk.Tk):
             self.displaysToUse[:] = [x - 1 for x in self.displaysToUse]
             self.numberOfMonitors = len(self.displaysToUse)
             # self.interval = self.config.getint('Config', 'interval') * 1000
-            self.interval = 250
+            self.interval = 500
             self.folder = self.config.get('Config', 'folder')
             self.offsetPref = self.config.getboolean('Config', 'offset')
             self.bgColor = self.config.get('Config', 'background color')

@@ -6,6 +6,8 @@ from PIL import Image
 import time
 import os
 import sys
+import gc
+import io
 
 
 # Thanks to @UdacityJeremy for the framework from which this file was made:
@@ -26,36 +28,23 @@ def size(image, w, h):
 
 
 def worker_main(input_queue, output_queue):
-    opentimer = set()
-    resizetimer = set()
-    count = 0
     while True:
         data = input_queue.get()
-        path, w, h = data
+        iofile, w, h = data
+        image = Image.open(iofile)
         # if path.endswith('png'):
         #     print "resizing", path
-        # with Timer() as t:
-        image = Image.open(path)
-        # if t.secs is not 0.0:
-        #     opentimer.add(t.secs)
-        # with Timer() as g:
-        image = size(image, w, h)
-        # if g.secs is not 0.0:
-        #     resizetimer.add(g.secs)
-        # count += 1
-        # if count % 100 == 0:
-        #     print "avg open: " + str(sum(opentimer) / len(opentimer))
-        #     print "avg resize: " + str(sum(resizetimer) / len(resizetimer))
-        image = {
-            'pixels': image.tobytes(),
-            'size': image.size,
-            'mode': image.mode,
-        }
-        print path
-        imobj = list((path, image))
-        # if count % 100 == 0:
-        #     print count
-        output_queue.put(imobj)
+        with Timer() as g:
+            image = size(image, w, h)
+        resizetime = g.secs
+        # image = {
+        #     'pixels': image.tobytes(),
+        #     'size': image.size,
+        #     'mode': image.mode,
+        # }
+        # imobj = list((image))
+        output_queue.put(resizetime)
+        # output_queue.put(imobj)
 
 
 class Timer(object):
@@ -95,17 +84,21 @@ class ImageLoader:
         self.pool.terminate()
 
     def put(self, filename, w, h):
-        self.input_queue.put((filename, w, h))
+        with open(filename, 'rb') as f:
+            iofile = io.BytesIO(f.read())
+        opentime = 0
+        self.input_queue.put((iofile, w, h))
+        return opentime
 
     def get(self, *p, **kw):
         try:
             imobj = self.output_queue.get_nowait(*p, **kw)
-            image = imobj[1]
-            image = Image.frombytes(
-                image['mode'],
-                image['size'],
-                image['pixels'])
-            imobj[1] = image
+            # image = imobj[1]
+            # image = Image.frombytes(
+            #     image['mode'],
+            #     image['size'],
+            #     image['pixels'])
+            # imobj[1] = image
             return imobj
         except Empty:
             e = sys.exc_info()[0]
@@ -116,8 +109,8 @@ class ImageLoader:
 
 def main():
     loader = ImageLoader()
-    loader.start("E:/Dropbox/ordfaves")
     pImgList = list()
+    loader.start("E:/Dropbox/ordfaves")
     os.chdir("E:/Dropbox/ordfaves")
     uniSource = os.getcwdu()
     for fname in os.listdir(uniSource):
@@ -127,9 +120,25 @@ def main():
         if fname.endswith(('.jpg', '.png', '.jpeg', '.gif')):
             pImgList.append(fname)
     print "start"
+    count = 0
+    opentimer = set()
+    resizetimer = set()
     for each in pImgList:
-        loader.put(each, 1680, 1050)
-    print "all added"
+        time.sleep(0.25)
+        opentimer.add(loader.put(each, 1680, 1050))
+        count += 1
+        imgobj = loader.get()
+        if imgobj is not "none":
+            resizetimer.add(imgobj)
+        print count
+        if count % 10 == 0:
+            print len(resizetimer)
+            resavg = sum(resizetimer) / len(resizetimer)
+            openavg = sum(opentimer) / len(opentimer)
+            print "avg resize: ", str(resavg)
+            print len(opentimer)
+            print "avg open: ", str(openavg)
+    print "done"
 
 
 if __name__ == '__main__':
