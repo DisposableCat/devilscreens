@@ -251,7 +251,7 @@ class fancyButton:
             log.error(status)
             # try again with default values
             status, newImg = iconAssembler(self.parent.baseDir, button,
-                                           "circled", "0xffffff,same,0x000000",
+                                           "circled", "#ffffff/same/#000000",
                                            "silver")
         newImg = ImageTk.PhotoImage(newImg)
         return newImg
@@ -519,7 +519,7 @@ class ssRoot(tk.Tk):
             self.displaysToUse[:] = [x - 1 for x in self.displaysToUse]
             self.numberOfMonitors = len(self.displaysToUse)
             # self.interval = self.config.getint('Config', 'interval') * 1000
-            self.interval = 500
+            self.interval = 100
             self.folder = self.config.get('Config', 'folder')
             self.offsetPref = self.config.getboolean('Config', 'offset')
             self.bgColor = self.config.get('Config', 'background color')
@@ -553,7 +553,7 @@ class ssRoot(tk.Tk):
         self.config.add_section("Theme")
         self.config.set("Theme", "themes", "circled")
         self.config.set("Theme", "backgrounds", "silver")
-        self.config.set("Theme", "colors", "0xffffff,same,0x000000")
+        self.config.set("Theme", "colors", "#ffffff/same/#000000")
         self.config.add_section('Debug')
         self.config.set('Debug', 'index display', 'no')
         with open(os.path.join(self.baseDir, 'slideshow.ini'), 'wb') as \
