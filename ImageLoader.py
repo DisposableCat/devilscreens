@@ -27,24 +27,26 @@ def size(image, w, h):
     return nimage
 
 
-def worker_main(input_queue, output_queue):
+def worker_main(input_queue, output_queue, testing):
     while True:
         data = input_queue.get()
-        iofile, w, h = data
+        iofile, filename, w, h = data
         image = Image.open(iofile)
-        # if path.endswith('png'):
-        #     print "resizing", path
-        with Timer() as g:
+        if testing:
+            with Timer() as g:
+                image = size(image, w, h)
+            resizetime = g.secs
+            del image
+            output_queue.put(resizetime)
+        if not testing:
             image = size(image, w, h)
-        resizetime = g.secs
-        # image = {
-        #     'pixels': image.tobytes(),
-        #     'size': image.size,
-        #     'mode': image.mode,
-        # }
-        # imobj = list((image))
-        output_queue.put(resizetime)
-        # output_queue.put(imobj)
+            image = {
+                'pixels': image.tobytes(),
+                'size': image.size,
+                'mode': image.mode,
+            }
+            imobj = list((filename, image))
+            output_queue.put(imobj)
 
 
 class Timer(object):
@@ -64,8 +66,9 @@ class Timer(object):
 
 
 class ImageLoader:
+    global testing
     OUTPUT_QUEUE_SIZE = 1000
-    INPUT_QUEUE_SIZE = 1000
+    INPUT_QUEUE_SIZE = 100
     WORKER_COUNT = 3
 
     def __init__(self):
@@ -78,28 +81,36 @@ class ImageLoader:
                                          worker_main, (
                                              self.input_queue,
                                              self.output_queue,
+                                             testing
                                          ))
 
     def stop(self):
         self.pool.terminate()
 
     def put(self, filename, w, h):
-        with Timer() as t:
+        if testing:
+            with Timer() as t:
+                with open(filename, 'rb') as f:
+                    iofile = io.BytesIO(f.read())
+            opentime = t.secs
+            self.input_queue.put((iofile, filename, w, h))
+            return opentime
+        if not testing:
             with open(filename, 'rb') as f:
                 iofile = io.BytesIO(f.read())
-        opentime = t.secs
-        self.input_queue.put((iofile, w, h))
-        return opentime
+            self.input_queue.put((iofile, filename, w, h))
 
     def get(self, *p, **kw):
         try:
             imobj = self.output_queue.get_nowait(*p, **kw)
-            # image = imobj[1]
-            # image = Image.frombytes(
-            #     image['mode'],
-            #     image['size'],
-            #     image['pixels'])
-            # imobj[1] = image
+            if not testing:
+                image = imobj[1]
+                image = Image.frombytes(
+                    image['mode'],
+                    image['size'],
+                    image['pixels'])
+                imobj[1] = image
+                print self.output_queue.qsize()
             return imobj
         except Empty:
             e = sys.exc_info()[0]
@@ -109,7 +120,9 @@ class ImageLoader:
 
 
 def main():
-    folder = "G:/pictures/stp/new"
+    global testing
+    print testing
+    folder = "C:/Users/Fenrir/Pictures/worksafe wallpapers"
     loader = ImageLoader()
     pImgList = list()
     loader.start(folder)
@@ -124,23 +137,27 @@ def main():
     print "files: ", len(pImgList)
     print "start"
     count = 1
-    opentimer = set()
-    resizetimer = set()
+    opentimer = list()
+    resizetimer = list()
     for each in pImgList:
-        opentimer.add(loader.put(each, 1680, 1050))
+        opener = loader.put(each, 1680, 1050)
+        opentimer.append(opener)
         imgobj = loader.get()
         if imgobj is not "none":
-            resizetimer.add(imgobj)
+            resizetimer.append(imgobj)
             count += 1
-        if count % 10 == 0:
-            print len(resizetimer)
+        if count % 100 == 0:
+            print len(resizetimer), "resizes"
             resavg = sum(resizetimer) / len(resizetimer)
             openavg = sum(opentimer) / len(opentimer)
             print "avg resize: ", str(resavg)
-            print len(opentimer)
+            print len(opentimer), "opens"
             print "avg open: ", str(openavg)
     print "done"
 
 
+testing = False
+
 if __name__ == '__main__':
+    testing = True
     main()
