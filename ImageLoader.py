@@ -35,7 +35,7 @@ def worker_main(input_queue, output_queue, testing):
         if testing:
             with Timer() as g:
                 image = size(image, w, h)
-            resizetime = g.secs
+            resizetime = g.msecs
             del image
             output_queue.put(resizetime)
         if not testing:
@@ -45,6 +45,7 @@ def worker_main(input_queue, output_queue, testing):
                 'size': image.size,
                 'mode': image.mode,
             }
+            print "pushed", filename
             imobj = list((filename, image))
             output_queue.put(imobj)
 
@@ -92,7 +93,7 @@ class ImageLoader:
             with Timer() as t:
                 with open(filename, 'rb') as f:
                     iofile = io.BytesIO(f.read())
-            opentime = t.secs
+            opentime = t.msecs
             self.input_queue.put((iofile, filename, w, h))
             return opentime
         if not testing:
@@ -110,7 +111,7 @@ class ImageLoader:
                     image['size'],
                     image['pixels'])
                 imobj[1] = image
-                print self.output_queue.qsize()
+                # print "readahead", self.output_queue.qsize()
             return imobj
         except Empty:
             e = sys.exc_info()[0]

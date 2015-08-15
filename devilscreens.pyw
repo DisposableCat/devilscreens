@@ -113,6 +113,8 @@ class imageList(object):
 
     def __init__(self, parent, data):
         self.parent = parent
+        self.maxlen = 80
+        self.deltalen = self.maxlen // 2
         self.intervalTime = self.parent.interval
         self.files = wrappingList(data)
         self.loadedIndex = tk.IntVar()
@@ -120,8 +122,8 @@ class imageList(object):
         self.minIndex = self.loadedIndex.get()
         self.maxIndex = self.loadedIndex.get()
         self.loader = parent.loader
-        self.historyArray = collections.deque()
-        for x in range(-10, 10):
+        self.historyArray = collections.deque(maxlen=self.maxlen)
+        for x in range(-(self.deltalen), self.deltalen):
             self.historyArray.append(imageObject(self.parent, self.files[x]))
 
     def __len__(self):
@@ -130,25 +132,15 @@ class imageList(object):
     def __getitem__(self, item):
         return self.historyArray[item % len(self.historyArray)]
 
-    def forwardRead(self, plus):
-        start = self.maxIndex
-        end = start + plus
-        for each in range(start, end):
-            im = self.files[each]
-
     def nextImage(self):
         self.loadedIndex.set(self.loadedIndex.get() + 1)
         if self.loadedIndex.get() > self.maxIndex:
             self.parent.parent.totalImages.set(
                 self.parent.parent.totalImages.get() + 1)
             self.maxIndex += 1
-        kill = self.historyArray.popleft()
-        try:
-            del self.parent.parent.eventLoop.loadedImages[kill]
-        except:
-            pass
         self.historyArray.append(
-            imageObject(self.parent, self.files[self.loadedIndex.get() + 10]))
+            imageObject(self.parent, self.files[self.loadedIndex.get() +
+                                                self.deltalen]))
         self.updateActiveImage("next")
 
     def prevImage(self):
@@ -157,13 +149,9 @@ class imageList(object):
             self.parent.parent.totalImages.set(
                 self.parent.parent.totalImages.get() + 1)
             self.minIndex -= 1
-        kill = self.historyArray.pop()
-        try:
-            del self.parent.parent.eventLoop.loadedImages[kill]
-        except:
-            pass
         self.historyArray.appendleft(
-            imageObject(self.parent, self.files[self.loadedIndex.get() - 10]))
+            imageObject(self.parent, self.files[self.loadedIndex.get() -
+                                                self.deltalen]))
         self.updateActiveImage("prev")
 
     def updateActiveImage(self, calledFromButton):
@@ -172,10 +160,9 @@ class imageList(object):
             return
         self.actImg = self.historyArray[0]
         self.parent.parent.eventLoop.getWork()
-        # if self.actImg.ordFName.endswith("png"):
-        #     print "requesting" + self.actImg.ordFName
-        self.actImg.image = self.parent.parent.eventLoop.loadedImages[
-            self.actImg.ordFName]
+        self.actImg.image = self.parent.parent.eventLoop.loadedImages.pop(
+            self.actImg.ordFName)
+        print "popped", self.actImg.ordFName, self.loadedIndex.get()
         self.showImage()
 
     def showImage(self):
@@ -222,6 +209,7 @@ class imageObject(object):
         except AttributeError:
             self.artist = ""
         self.loader.put(self.ordFName, self.screen.m.w, self.screen.m.h)
+        print "queued", self.ordFName
 
     def __str__(self):
         for each in vars(self):
@@ -452,7 +440,7 @@ class eventTicker:
         self.startingOffset = self.parent.startingOffset / 1000
         self.startTime = time.time()
         self.loadedImages = dict()
-        opener = self.parent.after(10000, self.initOffset)
+        opener = self.parent.after(5000, self.initOffset)
 
     def initOffset(self):
         self.updateTimer = list()
@@ -653,6 +641,7 @@ class ssRoot(tk.Tk):
             log.error("There are no images in the source folder! Exiting")
             exit()
         shuffle(pImgList)
+        print len(pImgList), " total files"
         return pImgList
 
     def initDisplays(self):
