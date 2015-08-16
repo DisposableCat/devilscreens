@@ -507,7 +507,7 @@ class ssRoot(tk.Tk):
             self.displaysToUse[:] = [x - 1 for x in self.displaysToUse]
             self.numberOfMonitors = len(self.displaysToUse)
             # self.interval = self.config.getint('Config', 'interval') * 1000
-            self.interval = 100
+            self.interval = 10
             self.folder = self.config.get('Config', 'folder')
             self.offsetPref = self.config.getboolean('Config', 'offset')
             self.bgColor = self.config.get('Config', 'background color')
