@@ -45,7 +45,6 @@ def worker_main(input_queue, output_queue, testing):
                 'size': image.size,
                 'mode': image.mode,
             }
-            print "pushed", filename
             imobj = list((filename, image))
             output_queue.put(imobj)
 
