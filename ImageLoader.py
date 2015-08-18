@@ -6,7 +6,6 @@ from PIL import Image
 import time
 import os
 import sys
-import gc
 import io
 
 
@@ -46,6 +45,7 @@ def worker_main(input_queue, output_queue, testing):
                 'mode': image.mode,
             }
             imobj = list((filename, image))
+            # print "pushed", filename
             output_queue.put(imobj)
 
 
@@ -122,7 +122,7 @@ class ImageLoader:
 def main():
     global testing
     print testing
-    folder = "C:/Users/Fenrir/Pictures/worksafe wallpapers"
+    folder = "G:/Pictures/STP/New"
     loader = ImageLoader()
     pImgList = list()
     loader.start(folder)

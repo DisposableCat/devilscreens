@@ -15,12 +15,10 @@ import time
 import sys
 import traceback
 import operator
-from PIL import Image
 from PIL import ImageTk
 import pyglet
 from iconsassemble import iconAssembler
 from ImageLoader import ImageLoader
-from ImageLoader import Timer as Timer
 
 
 # Copyright (c) 2015 Peter K Cawley. Released under MIT license; see
@@ -163,6 +161,7 @@ class imageList(object):
         self.parent.parent.eventLoop.getWork()
         self.actImg.image = self.parent.parent.eventLoop.loadedImages.pop(
             self.actImg.ordFName)
+        # print "popped", self.actImg.ordFName, self.loadedIndex.get()
         self.showImage()
 
     def showImage(self):
@@ -209,6 +208,7 @@ class imageObject(object):
         except AttributeError:
             self.artist = ""
         self.loader.put(self.ordFName, self.screen.m.w, self.screen.m.h)
+        #print "queued", self.ordFName
 
     def __str__(self):
         for each in vars(self):
@@ -440,6 +440,8 @@ class eventTicker:
         self.startTime = time.time()
         self.loadedImages = dict()
         opener = self.parent.after(5000, self.initOffset)
+        self.count = set()
+        self.n = len(self.parent.displaysUsed) + 1
 
     def initOffset(self):
         self.updateTimer = time.time()
@@ -448,6 +450,7 @@ class eventTicker:
         for display in self.parent.displaysUsed:
             self.offsets.append(count)
             count += self.startingOffset
+        print self.offsets
         self.updateIntervals = [self.interval] * len(self.parent.displaysUsed)
         self.getWork()
         self.next = self.parent.after(10, self.updater)
@@ -456,7 +459,7 @@ class eventTicker:
         display.il.updateActiveImage('timer')
 
     def getWork(self):
-        for x in range(1, 10):
+        for x in range(1, 100):
             imobj = self.parent.mainLoader.get()
             if imobj is not "none":
                 self.loadedImages[imobj[0]] = imobj[1]
@@ -467,15 +470,16 @@ class eventTicker:
                 self.updateIntervals,
                 self.offsets):
             sinceLastChange = time.time() - self.updateTimer - (10 / 1000)
-            print "checking ticker, interval in ms: ", int(sinceLastChange * \
-                                                           1000)
             if sinceLastChange + offset > checkTime and display.running.get():
                 self.updateDisplay(display)
                 print "changed image, off by: ", abs(int((sinceLastChange -
                                                           self.interval) *
                                                          1000))
-                if offset == 0:
-                    self.updateTimer = time.time()
+                self.count.add(display.il.actImg.ordFName)
+        print self.count
+        if len(self.count) == self.n:
+            self.updateTimer = time.time()
+            self.count = set()
         self.getWork()
         self.next = self.parent.after(10, self.updater)
 
@@ -512,8 +516,7 @@ class ssRoot(tk.Tk):
             self.displaysToUse = map(int, self.displaysToUse)
             self.displaysToUse[:] = [x - 1 for x in self.displaysToUse]
             self.numberOfMonitors = len(self.displaysToUse)
-            # self.interval = self.config.getint('Config', 'interval') * 1000
-            self.interval = 1000
+            self.interval = self.config.getint('Config', 'interval') * 1000
             self.folder = self.config.get('Config', 'folder')
             self.offsetPref = self.config.getboolean('Config', 'offset')
             self.bgColor = self.config.get('Config', 'background color')
