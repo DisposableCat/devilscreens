@@ -457,6 +457,7 @@ class eventTicker:
 
     def updateDisplay(self, display):
         display.il.updateActiveImage('timer')
+        display.updated = True
 
     def getWork(self):
         for x in range(1, 100):
@@ -471,15 +472,18 @@ class eventTicker:
                 self.offsets):
             sinceLastChange = time.time() - self.updateTimer - (10 / 1000)
             if sinceLastChange + offset > checkTime and display.running.get():
-                self.updateDisplay(display)
-                print "changed image, off by: ", abs(int((sinceLastChange -
-                                                          self.interval) *
-                                                         1000))
-                self.count.add(display.il.actImg.ordFName)
-        print self.count
-        if len(self.count) == self.n:
+                if display.updated == False:
+                    self.updateDisplay(display)
+                    print "changed image, off by: ", abs(int((sinceLastChange -
+                                                              self.interval) *
+                                                             1000))
+        updateset = list()
+        for display in self.parent.displaysUsed:
+            updateset.append(display.updated)
+        if False not in updateset:
             self.updateTimer = time.time()
-            self.count = set()
+            for display in self.parent.displaysUsed:
+                display.updated = False
         self.getWork()
         self.next = self.parent.after(10, self.updater)
 
@@ -696,6 +700,7 @@ class slideShowWindow(tk.Toplevel):
         self.background = background
         self.rawil = imagelist
         self.il = imageList(self, imagelist)
+        self.updated = False
         self.artist = tk.StringVar()
         self.artist.set(None)
         self.running = tk.BooleanVar()
