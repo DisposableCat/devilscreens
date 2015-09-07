@@ -466,6 +466,7 @@ class eventTicker:
                 self.loadedImages[imobj[0]] = imobj[1]
 
     def updater(self):
+        self.getWork()
         for display, checkTime, offset in zip(
                 self.parent.displaysUsed,
                 self.updateIntervals,
@@ -475,7 +476,8 @@ class eventTicker:
                 if display.updated == False:
                     self.updateDisplay(display)
                     print "changed image, off by: ", abs(int((sinceLastChange -
-                                                              self.interval) *
+                                                              self.interval
+                                                              + offset) *
                                                              1000))
         updateset = list()
         for display in self.parent.displaysUsed:
